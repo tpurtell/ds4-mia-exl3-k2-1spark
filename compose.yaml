@@ -1,0 +1,50 @@
+services:
+  deepseek-v4-flash:
+    image: ${RECIPE_IMAGE:-ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:latest}
+    pull_policy: ${PULL_POLICY:-missing}
+    restart: unless-stopped
+    network_mode: host
+    ipc: host
+    shm_size: 64gb
+    gpus: all
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    ulimits:
+      memlock: -1
+      nofile: 1048576
+      stack: 67108864
+    environment:
+      CUDA_VISIBLE_DEVICES: ${GPUS:-0}
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-1}
+      HF_HUB_DISABLE_XET: ${HF_HUB_DISABLE_XET:-1}
+      TRANSFORMERS_OFFLINE: ${TRANSFORMERS_OFFLINE:-1}
+      VLLM_CACHE_ROOT: /cache/huggingface/vllm-cache
+      MODEL_KIND: ${MODEL_KIND:-k2}
+      MODEL_REPO: ${MODEL_REPO:-}
+      MODEL_REVISION: ${MODEL_REVISION:-}
+      HF_HOME: /cache/huggingface
+      SERVED_MODEL_NAME: ${SERVED_MODEL_NAME:-}
+      TP_SIZE: ${TP_SIZE:-1}
+      NNODES: 1
+      CUTE_DSL_ARCH: sm_121a
+      VLLM_ALLOW_LONG_MAX_MODEL_LEN: 1
+      VLLM_SPARSE_INDEXER_MAX_LOGITS_MB: ${VLLM_SPARSE_INDEXER_MAX_LOGITS_MB:-256}
+      VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS: 0
+      VLLM_USE_B12X_MOE: 1
+      VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM: ${VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM:-0}
+      VLLM_B12X_W4A16_FORCE_BLOCKS_MAX_M: ${VLLM_B12X_W4A16_FORCE_BLOCKS_MAX_M:-16}
+      NCCL_NET: ${NCCL_NET:-IB}
+      NCCL_DEBUG: ${NCCL_DEBUG:-WARN}
+      MAX_MODEL_LEN: ${MAX_MODEL_LEN:-1000000}
+      MAX_NUM_SEQS: ${MAX_NUM_SEQS:-6}
+      MAX_NUM_BATCHED_TOKENS: ${MAX_NUM_BATCHED_TOKENS:-8192}
+      MAX_CUDAGRAPH_CAPTURE_SIZE: ${MAX_CUDAGRAPH_CAPTURE_SIZE:-36}
+      CUDAGRAPH_CAPTURE_SIZES: ${CUDAGRAPH_CAPTURE_SIZES:-36}
+      GPU_MEMORY_UTILIZATION: ${GPU_MEMORY_UTILIZATION:-0.85}
+      KV_CACHE_DTYPE: ${KV_CACHE_DTYPE:-nvfp4_ds_mla}
+      PREFIX_CACHE: ${PREFIX_CACHE:-1}
+      DSPARK_TOKENS: ${DSPARK_TOKENS:-5}
+      DEFAULT_THINKING: ${DEFAULT_THINKING:-max}
+    volumes:
+      - ${HF_CACHE:-${HOME}/.cache/huggingface}:/cache/huggingface

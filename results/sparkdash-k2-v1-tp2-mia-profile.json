@@ -1,0 +1,198 @@
+{
+  "kiwi-k2-tp2": [
+    {
+      "benchId": "4519938f-d887-41ce-8b8a-f01544855a89",
+      "sparkId": "kiwi-k2-tp2",
+      "status": "completed",
+      "startedAt": 1786573933373,
+      "completedAt": 1786574137962,
+      "config": {
+        "port": 8888,
+        "modelId": "deepseek-v4-flash-0731-exl3-k2-calibrated-v1",
+        "concurrencies": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "maxTokens": 2048
+      },
+      "progress": {
+        "currentConcurrency": null,
+        "completedLevels": 4,
+        "totalLevels": 4,
+        "message": "Done"
+      },
+      "results": [
+        {
+          "concurrency": 1,
+          "streamsOk": 1,
+          "streamsFailed": 0,
+          "meanDecodeTps": 53.68,
+          "medianDecodeTps": 53.68,
+          "minDecodeTps": 53.68,
+          "maxDecodeTps": 53.68,
+          "meanTtftMs": 246.57,
+          "medianTtftMs": 246.57,
+          "aggregateDecodeTps": 53.68,
+          "totalDecodeTokens": 2047,
+          "totalCompletionTokens": 2048,
+          "durationMs": 38382.88,
+          "error": null,
+          "streams": [
+            {
+              "index": 0,
+              "ttftMs": 246.57,
+              "decodeTps": 53.68,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 38382.21,
+              "error": null
+            }
+          ],
+          "model": "deepseek-v4-flash-0731-exl3-k2-calibrated-v1"
+        },
+        {
+          "concurrency": 2,
+          "streamsOk": 2,
+          "streamsFailed": 0,
+          "meanDecodeTps": 55.62,
+          "medianDecodeTps": 55.62,
+          "minDecodeTps": 48.92,
+          "maxDecodeTps": 62.32,
+          "meanTtftMs": 417.25,
+          "medianTtftMs": 417.25,
+          "aggregateDecodeTps": 97.85,
+          "totalDecodeTokens": 4094,
+          "totalCompletionTokens": 4096,
+          "durationMs": 42077.55,
+          "error": null,
+          "streams": [
+            {
+              "index": 0,
+              "ttftMs": 599.02,
+              "decodeTps": 62.32,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 33447.95,
+              "error": null
+            },
+            {
+              "index": 1,
+              "ttftMs": 235.48,
+              "decodeTps": 48.92,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 42076.67,
+              "error": null
+            }
+          ],
+          "model": "deepseek-v4-flash-0731-exl3-k2-calibrated-v1"
+        },
+        {
+          "concurrency": 3,
+          "streamsOk": 3,
+          "streamsFailed": 0,
+          "meanDecodeTps": 37.51,
+          "medianDecodeTps": 35.98,
+          "minDecodeTps": 35.29,
+          "maxDecodeTps": 41.25,
+          "meanTtftMs": 471.66,
+          "medianTtftMs": 471.59,
+          "aggregateDecodeTps": 105.88,
+          "totalDecodeTokens": 6141,
+          "totalCompletionTokens": 6144,
+          "durationMs": 58469.84,
+          "error": null,
+          "streams": [
+            {
+              "index": 0,
+              "ttftMs": 472.02,
+              "decodeTps": 35.29,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 58469.62,
+              "error": null
+            },
+            {
+              "index": 1,
+              "ttftMs": 471.59,
+              "decodeTps": 35.98,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 57357.98,
+              "error": null
+            },
+            {
+              "index": 2,
+              "ttftMs": 471.37,
+              "decodeTps": 41.25,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 50092.5,
+              "error": null
+            }
+          ],
+          "model": "deepseek-v4-flash-0731-exl3-k2-calibrated-v1"
+        },
+        {
+          "concurrency": 4,
+          "streamsOk": 4,
+          "streamsFailed": 0,
+          "meanDecodeTps": 36.76,
+          "medianDecodeTps": 36.84,
+          "minDecodeTps": 31.49,
+          "maxDecodeTps": 41.87,
+          "meanTtftMs": 540.51,
+          "medianTtftMs": 643.3,
+          "aggregateDecodeTps": 125.15,
+          "totalDecodeTokens": 8188,
+          "totalCompletionTokens": 8192,
+          "durationMs": 65657.01,
+          "error": null,
+          "streams": [
+            {
+              "index": 0,
+              "ttftMs": 643.9,
+              "decodeTps": 39.06,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 53050.21,
+              "error": null
+            },
+            {
+              "index": 1,
+              "ttftMs": 643.4,
+              "decodeTps": 31.49,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 65656.34,
+              "error": null
+            },
+            {
+              "index": 2,
+              "ttftMs": 643.19,
+              "decodeTps": 34.61,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 59787.87,
+              "error": null
+            },
+            {
+              "index": 3,
+              "ttftMs": 231.53,
+              "decodeTps": 41.87,
+              "decodeTokens": 2047,
+              "completionTokens": 2048,
+              "totalMs": 49124.9,
+              "error": null
+            }
+          ],
+          "model": "deepseek-v4-flash-0731-exl3-k2-calibrated-v1"
+        }
+      ],
+      "error": null,
+      "durationMs": 204589
+    }
+  ]
+}
