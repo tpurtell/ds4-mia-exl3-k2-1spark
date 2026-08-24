@@ -94,9 +94,16 @@ async def run_case(
     thinking,
     thinking_token_budget=None,
     max_tokens=4096,
+    run_id="run",
 ):
     prompts = await asyncio.gather(*[
-        asyncio.to_thread(build_prompt, base_url, model, target_prompt_tokens, f"p{target_prompt_tokens}-c{concurrency}-r{index}")
+        asyncio.to_thread(
+            build_prompt,
+            base_url,
+            model,
+            target_prompt_tokens,
+            f"{run_id}-p{target_prompt_tokens}-c{concurrency}-r{index}",
+        )
         for index in range(concurrency)
     ])
     started = time.perf_counter()
@@ -126,6 +133,11 @@ async def main():
     parser.add_argument("--thinking", choices=("off", "on", "default"), default="off")
     parser.add_argument("--thinking-token-budget", type=int)
     parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Unique sweep identifier used to prevent cross-run prefix-cache hits",
+    )
+    parser.add_argument(
         "--max-tokens",
         "--max-output-tokens",
         dest="max_tokens",
@@ -142,6 +154,8 @@ async def main():
         report = json.loads(path.read_text())
     else:
         report = {"model": args.model, "base_url": args.base_url, "cases": []}
+    run_id = args.run_id or report.get("run_id") or f"run-{time.time_ns()}"
+    report["run_id"] = run_id
     report["max_tokens"] = args.max_tokens or None
     report["thinking"] = args.thinking
     report["thinking_token_budget"] = args.thinking_token_budget
@@ -158,6 +172,7 @@ async def main():
                 args.thinking,
                 args.thinking_token_budget,
                 args.max_tokens,
+                run_id,
             )
             case["target_prompt_tokens"] = prompt_length
             case["thinking"] = args.thinking
