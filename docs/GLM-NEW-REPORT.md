@@ -374,12 +374,12 @@ DeepSeek-V4-Flash-0731 number:
 | Concurrency patches (Patch 1/2/2b) | `docs/PATCHES.md` |
 | DSML temperature asymmetry | `docs/DSML_SYNTAX_TEMP_ASYMMETRY.md` |
 | 0731 checkpoint + serving profile | `docs/DEEPSEEK_V4_FLASH_0731.md` |
-| Breakable vs regular graph numbers | `README.md` (PR #14 table) |
-| 200K/16 high-concurrency profile | `README.md` ("DSpark Concurrency Profile") |
-| Big-prompt lane, KV math | `README.md` (".env.dspark.example" + "How the KV cache works") |
-| Published 0731 sweep medians | `results/deepseek-v4-flash-0731-2x-dgx-spark.json` |
+| Breakable vs regular graph numbers | `results/RESULTS-2026-08-14.md` (1 Aug / PR #14) |
+| 200K/16 high-concurrency profile | `README.md` (“Optional: Stage-C / 200K-16”), `results/RESULTS-2026-08-14.md` |
+| Big-prompt lane, KV math | `README.md` (default profile + “How the KV cache works”) |
+| Published 0731 sweep medians | `results/deepseek-v4-flash-0731-2x-dgx-spark.json`, `results/RESULTS-2026-08-14.md` |
 | Benchmark methodology (decode-only) | `benchmarks/bench_decode_only.py`, `scripts/benchmark-0731.py` |
-| earlyoom host note | `README.md` ("Notes") |
+| earlyoom host note | `README.md` (Quick start) |
 
 ---
 

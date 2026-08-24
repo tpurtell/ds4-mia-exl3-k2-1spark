@@ -34,18 +34,31 @@ def build_prompt(base_url, model, target, nonce):
         text += unit * max(1, (target - count) // 3)
 
 
-def stream_one(base_url, model, prompt, thinking, max_output_tokens):
+def stream_one(
+    base_url,
+    model,
+    prompt,
+    thinking,
+    thinking_token_budget=None,
+    max_tokens=4096,
+):
     instruction = "\nReturn exactly 128 numbered lowercase English words, then stop."
+    # Always cap output by default: server-side thinking can otherwise run for
+    # hours and stall an entire sweep. Passing zero deliberately restores the
+    # historical uncapped behavior.
     body = {"model": model, "messages": [{"role": "user", "content": prompt + instruction}], "stream": True, "stream_options": {"include_usage": True}, "temperature": 0.6, "top_p": 0.95}
     if thinking != "default":
         body["chat_template_kwargs"] = {"thinking": thinking == "on"}
-    if max_output_tokens:
-        body["max_tokens"] = max_output_tokens
+    if thinking_token_budget is not None:
+        body["thinking_token_budget"] = thinking_token_budget
+    if max_tokens:
+        body["max_tokens"] = max_tokens
     request = urllib.request.Request(f"{base_url}/chat/completions", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     started = time.perf_counter()
     first = None
     usage = None
     output = []
+    finish_reason = None
     with urllib.request.urlopen(request, timeout=3600) as response:
         for raw in response:
             line = raw.decode().strip()
@@ -54,6 +67,8 @@ def stream_one(base_url, model, prompt, thinking, max_output_tokens):
             event = json.loads(line[6:])
             choices = event.get("choices") or []
             delta = choices[0].get("delta", {}) if choices else {}
+            if choices and choices[0].get("finish_reason"):
+                finish_reason = choices[0]["finish_reason"]
             if first is None and (delta.get("content") or delta.get("reasoning") or delta.get("reasoning_content")):
                 first = time.perf_counter()
             reasoning = delta.get("reasoning") or delta.get("reasoning_content") or ""
@@ -66,22 +81,40 @@ def stream_one(base_url, model, prompt, thinking, max_output_tokens):
     output_tokens = (usage or {}).get("completion_tokens", measured or 0)
     ttft = (first or finished) - started
     prompt_tokens = (usage or {}).get("prompt_tokens", 0)
-    return {"ttft_s": ttft, "elapsed_s": finished - started, "prompt_tokens": prompt_tokens, "prefill_tok_s": prompt_tokens / max(0.001, ttft), "output_tokens": output_tokens, "output_tok_s": output_tokens / max(0.001, finished - (first or finished))}
+    # truncated == the cap bound this request, so output_tokens is a floor rather
+    # than the model's natural length. Rates stay valid; total-length claims do not.
+    return {"ttft_s": ttft, "elapsed_s": finished - started, "prompt_tokens": prompt_tokens, "prefill_tok_s": prompt_tokens / max(0.001, ttft), "output_tokens": output_tokens, "output_tok_s": output_tokens / max(0.001, finished - (first or finished)), "finish_reason": finish_reason, "truncated": finish_reason == "length"}
 
 
-async def run_case(base_url, model, target_prompt_tokens, concurrency, thinking, max_output_tokens):
+async def run_case(
+    base_url,
+    model,
+    target_prompt_tokens,
+    concurrency,
+    thinking,
+    thinking_token_budget=None,
+    max_tokens=4096,
+):
     prompts = await asyncio.gather(*[
         asyncio.to_thread(build_prompt, base_url, model, target_prompt_tokens, f"p{target_prompt_tokens}-c{concurrency}-r{index}")
         for index in range(concurrency)
     ])
     started = time.perf_counter()
     results = await asyncio.gather(*[
-        asyncio.to_thread(stream_one, base_url, model, prompt, thinking, max_output_tokens)
+        asyncio.to_thread(
+            stream_one,
+            base_url,
+            model,
+            prompt,
+            thinking,
+            thinking_token_budget,
+            max_tokens,
+        )
         for prompt in prompts
     ])
     elapsed = time.perf_counter() - started
     total = sum(item["output_tokens"] for item in results)
-    return {"concurrency": concurrency, "elapsed_s": elapsed, "aggregate_tok_s": total / max(0.001, elapsed), "median_ttft_s": statistics.median(item["ttft_s"] for item in results), "median_prefill_tok_s": statistics.median(item["prefill_tok_s"] for item in results), "median_output_tok_s": statistics.median(item["output_tok_s"] for item in results), "requests": results}
+    return {"concurrency": concurrency, "elapsed_s": elapsed, "aggregate_tok_s": total / max(0.001, elapsed), "median_ttft_s": statistics.median(item["ttft_s"] for item in results), "median_prefill_tok_s": statistics.median(item["prefill_tok_s"] for item in results), "median_output_tok_s": statistics.median(item["output_tok_s"] for item in results), "truncated_requests": sum(1 for item in results if item["truncated"]), "requests": results}
 
 
 async def main():
@@ -91,7 +124,15 @@ async def main():
     parser.add_argument("--prompt-lengths", default="256,2048,8192,32768,131072")
     parser.add_argument("--concurrency", default="1,2,4,6")
     parser.add_argument("--thinking", choices=("off", "on", "default"), default="off")
-    parser.add_argument("--max-output-tokens", type=int, default=2048, help="Safety ceiling; use 0 for Mia's uncapped original behavior")
+    parser.add_argument("--thinking-token-budget", type=int)
+    parser.add_argument(
+        "--max-tokens",
+        "--max-output-tokens",
+        dest="max_tokens",
+        type=int,
+        default=4096,
+        help="Per-request output cap; use 0 only for the historical uncapped behavior",
+    )
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
@@ -101,7 +142,9 @@ async def main():
         report = json.loads(path.read_text())
     else:
         report = {"model": args.model, "base_url": args.base_url, "cases": []}
-    report["max_output_tokens"] = args.max_output_tokens or None
+    report["max_tokens"] = args.max_tokens or None
+    report["thinking"] = args.thinking
+    report["thinking_token_budget"] = args.thinking_token_budget
     completed = {(case["target_prompt_tokens"], case["concurrency"]) for case in report["cases"]}
     for prompt_length in [int(value) for value in args.prompt_lengths.split(",")]:
         for concurrency in [int(value) for value in args.concurrency.split(",")]:
@@ -113,10 +156,13 @@ async def main():
                 prompt_length,
                 concurrency,
                 args.thinking,
-                args.max_output_tokens,
+                args.thinking_token_budget,
+                args.max_tokens,
             )
             case["target_prompt_tokens"] = prompt_length
             case["thinking"] = args.thinking
+            case["thinking_token_budget"] = args.thinking_token_budget
+            case["max_tokens"] = args.max_tokens
             report["cases"].append(case)
             path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
             print(json.dumps(case, sort_keys=True), flush=True)

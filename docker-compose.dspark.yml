@@ -6,6 +6,22 @@ services:
     network_mode: host
     ipc: host
     shm_size: "64gb"
+    # Issue #38/#39: bring a crashed worker back. Keep grace short — vLLM
+    # ignores SIGTERM while loading and a long period hangs `compose stop`.
+    restart: ${DSPARK_RESTART_POLICY:-unless-stopped}
+    stop_grace_period: ${DSPARK_STOP_GRACE:-10s}
+
+    # Only rank 0 serves HTTP; the worker runs HEADLESS with no :8888 listener.
+    # Gate on $HEADLESS so the worker is not marked unhealthy forever. $$HEADLESS
+    # (double) is evaluated in the container at runtime; ${VLLM_PORT:-8888} is
+    # resolved by Compose. start_period covers cold model load (~6 min measured;
+    # raise it if your storage is slower).
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$HEADLESS\" ]; then exit 0; fi; curl -fsS http://127.0.0.1:${VLLM_PORT:-8888}/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 480s
 
     ulimits:
       memlock: -1
@@ -24,6 +40,26 @@ services:
       - ${VLLM_GB10_PATCH_DIR:-./vllm_patch_gb10}:/opt/vllm-gb10-hybrid-nvfp4
       # Issue #21 encoder hotfix (encode_arguments_to_dsml dict args).
       - ${DSPARK_ENCODING_ISSUE21_HOTFIX:-./patches/hotfix-encoding-dsv4-issue21.py}:/opt/hotfix-encoding-dsv4-issue21.py:ro
+      # Issue #31 V2 thinking budget (opt-in via DSPARK_ENABLE_ISSUE31_GPU_HOTFIX).
+      - ${DSPARK_ISSUE31_GPU_HOTFIX:-./patches/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py}:/opt/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py:ro
+      # Issue #55 tool-call truncation safety: finish_reason=length + drop
+      # non-JSON-parseable args when max_tokens cuts a tool call mid-flight.
+      - ${DSPARK_ISSUE55_HOTFIX:-./patches/hotfix-dsv4-issue55-tool-truncation.py}:/opt/hotfix-dsv4-issue55-tool-truncation.py:ro
+      # Issue #109: encoder-only EC producer steps must not emit phantom token 0.
+      - ${DSPARK_EMPTY_ENCODER_OUTPUT_HOTFIX:-./patches/hotfix-vllm-empty-encoder-output.py}:/opt/hotfix-vllm-empty-encoder-output.py:ro
+      # Issue #27 partial-prefill concurrency hotfix (enforce max_num_partial_prefills).
+      - ${DSPARK_ISSUE27_HOTFIX:-./patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py}:/opt/hotfix-dsv4-issue27-partial-prefill-concurrency.py:ro
+      # Issue #43 bounded decode service during mixed prefill steps + scheduler diag.
+      - ${DSPARK_ISSUE43_HOTFIX:-./patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py}:/opt/hotfix-dsv4-issue43-decode-fairness-and-diag.py:ro
+      # Issue #26/#36 hybrid coordinator: SWA may shrink the common hit (v2).
+      - ${DSPARK_ISSUE26_HOTFIX:-./patches/hotfix-dsv4-issue26-hybrid-swa-min.py}:/opt/hotfix-dsv4-issue26-hybrid-swa-min.py:ro
+      # Client stop strings stay dormant until </think> (Tony/Capicua25x Patch 5).
+      - ${DSPARK_SUPPRESS_STOPS_HOTFIX:-./patches/hotfix-dsv4-suppress-stops-in-reasoning.py}:/opt/hotfix-dsv4-suppress-stops-in-reasoning.py:ro
+      # A request ending with an assistant message must still get a generation
+      # header, or the model generates from a dead state (empty turns /
+      # hallucinated DSML markup loop). Upstream issue #52, PR #53.
+      - ${DSPARK_ASSISTANT_FINAL_HOTFIX:-./patches/hotfix-dsv4-assistant-final-continuation.py}:/opt/hotfix-dsv4-assistant-final-continuation.py:ro
+      - ${DSPARK_PATCHES_DIR:-./patches}:/opt/dspark-patches:ro
       - ${DSPARK_TMP_HOST:-${HOME}/.cache/dspark-tmp}:/tmp
 
     # Env surface is split by runtime image:
@@ -36,9 +72,35 @@ services:
       TRANSFORMERS_OFFLINE: "${TRANSFORMERS_OFFLINE:-0}"
       HF_HUB_DISABLE_XET: "${HF_HUB_DISABLE_XET:-1}"
       DSPARK_MODEL: "${DSPARK_MODEL:-deepseek-ai/DeepSeek-V4-Flash-0731}"
+      # Issue #26: sparsify SWA prefix-cache checkpoints (one tail per
+      # 4096-token segment + replay boundary). Complements the hybrid
+      # coordinator hotfix — SWA-min alone still 0/8 at 44K+ x8 because
+      # dense SWA tails evict MLA prefix blocks.
+      VLLM_PREFIX_CACHE_RETENTION_INTERVAL: "${VLLM_PREFIX_CACHE_RETENTION_INTERVAL:-4096}"
+      # Issue #43 scheduler diagnostics: emit one compact per-step line
+      # (scheduled prefill/decode tokens per request + zero-token decode
+      # skips) when set to 1. Off by default (zero overhead).
+      DSPARK_ISSUE43_SCHED_DIAG: "${DSPARK_ISSUE43_SCHED_DIAG:-0}"
+      # In-flight partial-prefill cap for the #27 hotfix (1-3, default 2).
+      # Do NOT pass --max-num-partial-prefills (Anemll 0.1.1 rejects it).
+      DSPARK_MAX_INFLIGHT_PREFILLS: "${DSPARK_MAX_INFLIGHT_PREFILLS:-2}"
       # Pin HF revision (issue #19). Empty → tip of default branch / refs/main.
       DSPARK_REVISION: "${DSPARK_REVISION:-}"
       DSPARK_ENCODING_FILE: "${DSPARK_ENCODING_FILE:-}"
+      # Optional single API key for the OpenAI endpoint (vLLM reads VLLM_API_KEY
+      # natively). Empty = no auth (default).
+      VLLM_API_KEY: "${VLLM_API_KEY:-}"
+      # Optional multi-key API auth, enforced by vLLM itself. `--api-key` is a
+      # dataclass list[str] (nargs), so ONE flag carrying every key works and
+      # repeating the flag would overwrite instead of append.
+      # Space-separated, one key per caller, so a single key can be revoked
+      # without disturbing the others. Empty or unset (default) adds no
+      # --api-key flag at all: stock unauthenticated behavior is unchanged.
+      # Mutually exclusive with VLLM_API_KEY: if both are meaningful the
+      # entrypoint exits 2 naming both variables instead of silently choosing one.
+      # Keys are container argv/env, so rotation needs a stop/start, and vLLM
+      # does not attribute requests to a key (revocation, not per-user logs).
+      DSPARK_API_KEYS: "${DSPARK_API_KEYS:-}"
       VLLM_CACHE_ROOT: /cache/huggingface/vllm-cache
       VLLM_HOST_IP: "${VLLM_HOST_IP:-}"
 
@@ -51,6 +113,11 @@ services:
 
       VLLM_USE_FLASHINFER_SAMPLER: "${VLLM_USE_FLASHINFER_SAMPLER:-1}"
       VLLM_USE_BREAKABLE_CUDAGRAPH: "${VLLM_USE_BREAKABLE_CUDAGRAPH:-0}"
+      # Issue #65/#87: mid-serve CuTeDSL/TileLang JIT can exceed the 300s
+      # sample_tokens RPC default and kill EngineCore (looks like an NCCL
+      # wedge on TP=2). 1800s rides out a worst-case compile; a true hang
+      # just surfaces later. Override to 300 to restore stock.
+      VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS: "${VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS:-1800}"
 
       VLLM_USE_B12X_MOE: "${VLLM_USE_B12X_MOE:-1}"
       VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM: "${VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM:-0}"
@@ -67,6 +134,16 @@ services:
       FLASHINFER_DISABLE_VERSION_CHECK: "${FLASHINFER_DISABLE_VERSION_CHECK:-1}"
       FLASHINFER_WORKSPACE_BASE: "${FLASHINFER_WORKSPACE_BASE:-/cache/huggingface/flashinfer}"
       TILELANG_CLEANUP_TEMP_FILES: "${TILELANG_CLEANUP_TEMP_FILES:-1}"
+      # Persist TileLang compiled kernels on the HF cache volume (issue #65).
+      # Default in-image path was ~/.tilelang/cache (lost on recreate).
+      TILELANG_CACHE_DIR: "${TILELANG_CACHE_DIR:-/cache/huggingface/tilelang-cache}"
+      # Persist Triton's JIT cache on the HF volume (issue #117). Default
+      # in-image path is ~/.triton/cache and dies on container recreate, so
+      # every restart re-JITs known shapes mid-serve; a compiling rank can
+      # stall its TP peer past torch's 600s NCCL watchdog. Entries are keyed
+      # by Triton version/backend hash, so sharing the dir across image
+      # updates is safe.
+      TRITON_CACHE_DIR: "${TRITON_CACHE_DIR:-/cache/huggingface/triton-cache}"
       DG_JIT_USE_NVRTC: "${DG_JIT_USE_NVRTC:-0}"
       DG_JIT_NVCC_COMPILER: "${DG_JIT_NVCC_COMPILER:-/usr/local/cuda/bin/nvcc}"
       PYTORCH_CUDA_ALLOC_CONF: "${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
@@ -85,6 +162,18 @@ services:
       NCCL_IGNORE_CPU_AFFINITY: "${NCCL_IGNORE_CPU_AFFINITY:-1}"
       NCCL_DEBUG: "${NCCL_DEBUG:-WARN}"
       NCCL_NVLS_ENABLE: "${NCCL_NVLS_ENABLE:-0}"
+      # NCCL fabric passthrough. A compose map cannot conditionally omit a
+      # key, so an unconfigured knob arrives as a defined-but-empty variable;
+      # the entrypoint unsets empty ones again before exec. That matters
+      # because NCCL loads config-file values (/etc/nccl.conf, NCCL_CONF_FILE)
+      # with overwrite=0 — a defined-empty variable would silently mask them.
+      # Configured non-empty values pass through unchanged; an empty value is
+      # normalized to absent, so it cannot be used to force an empty setting.
+      # See docs/ENVS.md for what each knob actually controls.
+      NCCL_IB_MERGE_NICS: "${NCCL_IB_MERGE_NICS:-}"
+      NCCL_NET_GDR_LEVEL: "${NCCL_NET_GDR_LEVEL:-}"
+      NCCL_NET_GDR_READ: "${NCCL_NET_GDR_READ:-}"
+      NCCL_DMABUF_ENABLE: "${NCCL_DMABUF_ENABLE:-}"
 
       NODE_RANK: "${NODE_RANK}"
       HEADLESS: "${HEADLESS:-}"
@@ -92,7 +181,32 @@ services:
       MASTER_PORT: "${MASTER_PORT:-25000}"
       # Checkpoint dspark_block_size is 5; k<5 truncates draft blocks (silent on 0.25.2 image).
       MTP_NUM_TOKENS: "${MTP_NUM_TOKENS:-5}"
+      # DSpark draft sampling. Default "probabilistic" = the value this compose
+      # hardcoded before; the official model cards ship "greedy" with k=7
+      # (issue #84). Consumed by the --speculative-config line below, not a
+      # vLLM env registry key. The entrypoint rejects anything but
+      # probabilistic/greedy before building --speculative-config, so the raw
+      # value never reaches the JSON.
+      DRAFT_SAMPLE_METHOD: "${DRAFT_SAMPLE_METHOD:-probabilistic}"
       DEFAULT_THINKING: "${DEFAULT_THINKING:-low}"
+      DSPARK_SKIP_HOTFIX: "${DSPARK_SKIP_HOTFIX:-0}"
+      DSPARK_SKIP_ISSUE22_HOTFIX: "${DSPARK_SKIP_ISSUE22_HOTFIX:-0}"
+      DSPARK_SKIP_SUPPRESS_STOPS_HOTFIX: "${DSPARK_SKIP_SUPPRESS_STOPS_HOTFIX:-0}"
+      # Issue #52 / PR #53: render a generation header when a request's
+      # messages array ends with an assistant turn (bare-EOS dead state ->
+      # empty no-op turn loop). 0 (default) = stock renderer, patch not
+      # invoked; 1 = apply at boot and fail the container on any patch error.
+      DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX: "${DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX:-0}"
+      # Issue #66: GPU V2 thinking_token_budget hotfix. 0 (default) = stock
+      # sampler (HTTP 400 if a client sends the field). 1 = apply at boot
+      # (fail-closed) so explicit thinking_token_budget works. Omit-field
+      # traffic does not need this patch and can hit a decode cliff with it on.
+      DSPARK_ENABLE_ISSUE31_GPU_HOTFIX: "${DSPARK_ENABLE_ISSUE31_GPU_HOTFIX:-0}"
+      DSPARK_SKIP_SPIN_WAIT_HOTFIX: "${DSPARK_SKIP_SPIN_WAIT_HOTFIX:-0}"
+      # 1 = keep client stop strings dormant inside <think> (default).
+      # 0 = stock vLLM (stops can fire mid-reason). Also honors
+      # VLLM_SUPPRESS_STOPS_IN_REASONING if that is set in .env.
+      DSPARK_SUPPRESS_STOPS_IN_REASONING: "${DSPARK_SUPPRESS_STOPS_IN_REASONING:-${VLLM_SUPPRESS_STOPS_IN_REASONING:-1}}"
 
     command:
       - bash
@@ -103,6 +217,11 @@ services:
         export CUDA_PATH="$${CUDA_PATH:-$${CUDA_HOME}}";
         export CUDAToolkit_ROOT="$${CUDAToolkit_ROOT:-$${CUDA_HOME}}";
         export LD_LIBRARY_PATH="/usr/local/cuda/lib64:$${LD_LIBRARY_PATH:-}";
+        API_KEY_ARGS=(); case "$${DSPARK_API_KEYS:-}" in *[$$'\r\n\v\f']*) echo "error: DSPARK_API_KEYS must be a single-line space-separated list" >&2; exit 2 ;; *\\*) echo "error: DSPARK_API_KEYS must not contain backslashes" >&2; exit 2 ;; esac; _dspark_keys_set=0; case "$${DSPARK_API_KEYS:-}" in *[!$$' \t']*) _dspark_keys_set=1 ;; esac; if [ -n "$${VLLM_API_KEY:-}" ] && [ "$${_dspark_keys_set}" = "1" ]; then echo "error: VLLM_API_KEY and DSPARK_API_KEYS are both set; set exactly one of them" >&2; exit 2; fi; if [ "$${_dspark_keys_set}" = "1" ]; then read -r -a _dspark_keys <<< "$${DSPARK_API_KEYS}"; for _dspark_key in "$${_dspark_keys[@]}"; do case "$${_dspark_key}" in -*) echo "error: DSPARK_API_KEYS contains a token beginning with '-'" >&2; exit 2 ;; esac; done; API_KEY_ARGS=(--api-key "$${_dspark_keys[@]}"); fi;
+        if [ -z "$${NCCL_IB_MERGE_NICS:-}" ]; then unset NCCL_IB_MERGE_NICS; fi;
+        if [ -z "$${NCCL_NET_GDR_LEVEL:-}" ]; then unset NCCL_NET_GDR_LEVEL; fi;
+        if [ -z "$${NCCL_NET_GDR_READ:-}" ]; then unset NCCL_NET_GDR_READ; fi;
+        if [ -z "$${NCCL_DMABUF_ENABLE:-}" ]; then unset NCCL_DMABUF_ENABLE; fi;
         ENCODING_SOURCE="$${DSPARK_ENCODING_FILE:-}";
         if [ -z "$${ENCODING_SOURCE}" ]; then
           MODEL_HUB_DIR=$$(printf '%s' "$${DSPARK_MODEL:-deepseek-ai/DeepSeek-V4-Flash-0731}" | sed 's|/|--|g');
@@ -117,14 +236,23 @@ services:
         fi;
         if [ -z "$${ENCODING_SOURCE}" ]; then for candidate in /cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/*/encoding/encoding_dsv4.py; do if [ -f "$${candidate}" ]; then ENCODING_SOURCE="$${candidate}"; break; fi; done; fi;
         if [ -z "$${ENCODING_SOURCE}" ] && [ -f /models/deepseek-ai/DeepSeek-V4-Flash-0731/encoding/encoding_dsv4.py ]; then ENCODING_SOURCE=/models/deepseek-ai/DeepSeek-V4-Flash-0731/encoding/encoding_dsv4.py; fi;
-        if [ -n "$${ENCODING_SOURCE}" ] && [ -f "$${ENCODING_SOURCE}" ]; then cp "$${ENCODING_SOURCE}" /usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4_encoding.py; python3 -c 'from pathlib import Path; p=Path("/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4.py"); s=p.read_text(); old="elif reasoning_effort in (\"max\", \"xhigh\"):\n                reasoning_effort = \"max\"\n            else:\n                reasoning_effort = \"high\""; new="elif reasoning_effort in (\"max\", \"xhigh\"):\n                reasoning_effort = \"max\"\n            elif reasoning_effort == \"high\":\n                reasoning_effort = \"high\"\n            else:\n                reasoning_effort = \"low\""; updated=s.replace(old,new); assert new in updated; p.write_text(updated)'; python3 /opt/hotfix-encoding-dsv4-issue21.py; fi;
-        VLLM_QUANTIZATION_ARGS="";
+        if [ -n "$${ENCODING_SOURCE}" ] && [ -f "$${ENCODING_SOURCE}" ]; then cp "$${ENCODING_SOURCE}" /usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4_encoding.py || exit 1; python3 -c 'from pathlib import Path; p=Path("/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4.py"); s=p.read_text(); old="elif reasoning_effort in (\"max\", \"xhigh\"):\n                reasoning_effort = \"max\"\n            else:\n                reasoning_effort = \"high\""; new="elif reasoning_effort in (\"max\", \"xhigh\"):\n                reasoning_effort = \"max\"\n            elif reasoning_effort == \"high\":\n                reasoning_effort = \"high\"\n            else:\n                reasoning_effort = \"low\""; updated=s.replace(old,new); assert new in updated; p.write_text(updated)' || exit 1; python3 /opt/hotfix-encoding-dsv4-issue21.py || exit 1; else echo "WARN: encoding_dsv4.py not found (set DSPARK_ENCODING_FILE or check the model snapshot) - encoder copy, reasoning-effort mapping and issue21 skipped" >&2; fi; if [ "$${DSPARK_ENABLE_ISSUE31_GPU_HOTFIX:-0}" = "1" ]; then python3 /opt/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py || exit 1; fi; python3 /opt/hotfix-dsv4-issue55-tool-truncation.py || exit 1;
+        if [ "$${DSPARK_SKIP_ISSUE22_HOTFIX:-0}" != "1" ]; then if [ ! -f /opt/dspark-patches/hotfix-nvfp4-ds-mla-issue22.sh ]; then echo "FATAL: /opt/dspark-patches/hotfix-nvfp4-ds-mla-issue22.sh missing" >&2; exit 1; fi; bash /opt/dspark-patches/hotfix-nvfp4-ds-mla-issue22.sh || exit 1; fi;
+        if [ "$${DSPARK_SKIP_SPIN_WAIT_HOTFIX:-0}" != "1" ]; then if [ ! -f /opt/dspark-patches/hotfix-gb10-spin-wait.sh ]; then echo "FATAL: /opt/dspark-patches/hotfix-gb10-spin-wait.sh missing" >&2; exit 1; fi; bash /opt/dspark-patches/hotfix-gb10-spin-wait.sh || exit 1; fi;
+        if [ "$${DSPARK_SKIP_HOTFIX:-0}" != "1" ]; then for _hf in hotfix-dsv4-mtp-buffer-50312.sh hotfix-dsv4-skip-topk-49486.sh hotfix-dsv4-dense-prefill-indexer-48407.sh hotfix-dsv4-skip-empty-c128-48957.sh hotfix-dsv4-flashmla-workspace-50298.sh hotfix-dsv4-grammar-advance.sh; do if [ ! -f /opt/dspark-patches/$${_hf} ]; then echo "FATAL: /opt/dspark-patches/$${_hf} missing" >&2; exit 1; fi; bash /opt/dspark-patches/$${_hf} || exit 1; done; fi;
+        if [ "$${_dspark_keys_set}" = "1" ] || [ -n "$${VLLM_API_KEY:-}" ]; then bash /opt/dspark-patches/hotfix-vllm-redact-api-key-log.sh || exit 1; bash /opt/dspark-patches/hotfix-vllm-redact-api-key-log.sh --status || exit 1; fi;
+        python3 /opt/hotfix-vllm-empty-encoder-output.py || exit 1; python3 /opt/hotfix-dsv4-issue27-partial-prefill-concurrency.py || exit 1; python3 /opt/hotfix-dsv4-issue43-decode-fairness-and-diag.py || exit 1; python3 /opt/hotfix-dsv4-issue26-hybrid-swa-min.py || exit 1; if [ "$${DSPARK_SKIP_SUPPRESS_STOPS_HOTFIX:-0}" != "1" ]; then python3 /opt/hotfix-dsv4-suppress-stops-in-reasoning.py || exit 1; fi; VLLM_QUANTIZATION_ARGS="";
+        if [ "$${DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX:-0}" = "1" ]; then python3 /opt/hotfix-dsv4-assistant-final-continuation.py || exit 1; fi;
         if [ "$${ENABLE_VLLM_GB10_PATCH:-0}" = "1" ]; then
           python3 -m pip install -e /opt/vllm-gb10-hybrid-nvfp4 --no-deps;
           export VLLM_PLUGINS="$${VLLM_PLUGINS:-gb10_hybrid_nvfp4}";
           VLLM_QUANTIZATION_ARGS="--quantization modelopt_gb10_hybrid";
         fi;
-        SPECULATIVE_CONFIG="{\"method\":\"dspark\",\"num_speculative_tokens\":$${MTP_NUM_TOKENS:-5},\"draft_sample_method\":\"probabilistic\"}";
+        case "$${DRAFT_SAMPLE_METHOD:-probabilistic}" in
+          probabilistic|greedy) DRAFT_SAMPLE_METHOD="$${DRAFT_SAMPLE_METHOD:-probabilistic}" ;;
+          *) echo "DRAFT_SAMPLE_METHOD must be one of: probabilistic, greedy (got: $${DRAFT_SAMPLE_METHOD})" >&2; exit 2 ;;
+        esac;
+        SPECULATIVE_CONFIG="{\"method\":\"dspark\",\"num_speculative_tokens\":$${MTP_NUM_TOKENS:-5},\"draft_sample_method\":\"$${DRAFT_SAMPLE_METHOD}\"}";
         case "$${DEFAULT_THINKING:-low}" in
           off) DEFAULT_CHAT_TEMPLATE_KWARGS='{"thinking":false}' ;;
           low) DEFAULT_CHAT_TEMPLATE_KWARGS='{"thinking":true,"reasoning_effort":"low"}' ;;
@@ -140,6 +268,7 @@ services:
         --host ${VLLM_HOST:-127.0.0.1}
         --port ${VLLM_PORT:-8888}
         --trust-remote-code
+        "$${API_KEY_ARGS[@]}"
         $${VLLM_QUANTIZATION_ARGS}
         --tensor-parallel-size 2
         --pipeline-parallel-size 1
@@ -148,6 +277,7 @@ services:
         --max-model-len ${MAX_MODEL_LEN:-1048576}
         --max-num-seqs ${MAX_NUM_SEQS:-6}
         --max-num-batched-tokens ${MAX_NUM_BATCHED_TOKENS:-8192}
+        --long-prefill-token-threshold ${LONG_PREFILL_TOKEN_THRESHOLD:-1024}
         --max-cudagraph-capture-size $$(( ${MAX_NUM_SEQS:-6} * (${MTP_NUM_TOKENS:-5} + 1) ))
         --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION:-0.80}
         --enable-prefix-caching

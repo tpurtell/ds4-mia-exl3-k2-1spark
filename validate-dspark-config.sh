@@ -44,6 +44,18 @@ else
 fi
 export DSPARK_MODEL DSPARK_REVISION
 
+# Same contract as the compose entrypoint: only these two values reach
+# --speculative-config; anything else must fail here too, not at boot.
+DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-probabilistic}"
+case "$DRAFT_SAMPLE_METHOD" in
+  probabilistic|greedy) ;;
+  *)
+    echo "DRAFT_SAMPLE_METHOD must be one of: probabilistic, greedy (got: ${DRAFT_SAMPLE_METHOD})" >&2
+    exit 2
+    ;;
+esac
+export DRAFT_SAMPLE_METHOD
+
 : "${WORKER_HOST:?WORKER_HOST must be set in $ENV_FILE}"
 : "${MASTER_ADDR:?MASTER_ADDR must be set in $ENV_FILE}"
 : "${MASTER_PORT:?MASTER_PORT must be set in $ENV_FILE}"
@@ -101,7 +113,7 @@ echo "  max model len: ${MAX_MODEL_LEN:-1048576}"
 echo "  max num seqs: ${MAX_NUM_SEQS:-6}"
 echo "  max batched tokens: ${MAX_NUM_BATCHED_TOKENS:-8192}"
 echo "  gpu memory utilization: ${GPU_MEMORY_UTILIZATION} (text ${GPU_MEMORY_UTILIZATION_TEXT:-0.835} / vision ${GPU_MEMORY_UTILIZATION_VISION:-0.80})"
-echo "  spec tokens (MTP_NUM_TOKENS): ${MTP_NUM_TOKENS:-5} with draft_sample_method=probabilistic (min 5 = dspark_block_size)"
+echo "  spec tokens (MTP_NUM_TOKENS): ${MTP_NUM_TOKENS:-5} with draft_sample_method=${DRAFT_SAMPLE_METHOD} (min 5 = dspark_block_size)"
 echo "  cudagraph capture size: $(( ${MAX_NUM_SEQS:-6} * (${MTP_NUM_TOKENS:-5} + 1) )) (max_num_seqs * (mtp + 1))"
 echo "  breakable cudagraph: ${VLLM_USE_BREAKABLE_CUDAGRAPH:-0}"
 echo "  dspark slot clamp: ${DSPARK_SLOT_CLAMP:-1}"
@@ -116,4 +128,4 @@ env -u MASTER_PORT -u NODE_RANK -u HEADLESS -u WORKER_HOST -u MASTER_ADDR \
   DSPARK_MODEL="$DSPARK_MODEL" \
   DSPARK_REVISION="${DSPARK_REVISION:-}" \
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config \
-  | grep -E -- '--max-model-len|--max-num-seqs|--max-num-batched-tokens|--max-cudagraph-capture-size|--gpu-memory-utilization|--master-port|--kv-cache-dtype|--speculative-config|--async-scheduling|--enable-chunked-prefill|--generation-config|--revision|image:|VLLM_USE_B12X_WO_PROJECTION|VLLM_USE_BREAKABLE_CUDAGRAPH|VLLM_USE_FLASHINFER_SAMPLER|MTP_NUM_TOKENS|DSPARK_REVISION'
+  | grep -E -- '--max-model-len|--max-num-seqs|--max-num-batched-tokens|--max-cudagraph-capture-size|--gpu-memory-utilization|--master-port|--kv-cache-dtype|--speculative-config|--async-scheduling|--enable-chunked-prefill|--generation-config|--revision|image:|VLLM_USE_B12X_WO_PROJECTION|VLLM_USE_BREAKABLE_CUDAGRAPH|VLLM_USE_FLASHINFER_SAMPLER|MTP_NUM_TOKENS|DRAFT_SAMPLE_METHOD|DSPARK_REVISION'

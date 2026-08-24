@@ -55,18 +55,36 @@ PY
 | `VLLM_SPARSE_INDEXER_MAX_LOGITS_MB` | Sparse indexer workspace cap |
 | `VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS` | Profiler / capture estimate |
 | `VLLM_USE_FLASHINFER_SAMPLER` | FlashInfer sampler |
+| `VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS` | `sample_tokens` RPC deadline (compose default **1800**; stock vLLM is 300). Issue #65/#87: mid-serve CuTeDSL/TileLang JIT can exceed 300s and kill EngineCore on TP=2. |
 | `VLLM_USE_BREAKABLE_CUDAGRAPH` | Set `0` to opt out of DS4's automatic breakable-graph mode and retain regular CUDA graphs |
 | `VLLM_USE_B12X_MOE` | Enable B12X MoE path |
 | `VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM` | Experimental W4A16 selector |
 | `VLLM_B12X_W4A16_FORCE_BLOCKS_MAX_M` | Experimental W4A16 selector |
 | `VLLM_B12X_W4A16_FORCE_TILE_CONFIG` | Experimental W4A16 selector |
 | `VLLM_HOST_IP` | Distributed bind address |
+| `VLLM_PREFIX_CACHE_RETENTION_INTERVAL` | Issue #26: sparsify SWA prefix-cache checkpoints (default 4096). This is the warm-hit fix; the coordinator must still let SWA shrink the common hit (hotfix v2, issue #36). |
 | `VLLM_CACHE_ROOT` | vLLM cache root (compose sets path) |
 | `CUTE_DSL_ARCH` | **Not** `VLLM_*` — CuTeDSL/b12x compile target (`sm_121a` on GB10) |
+| `TILELANG_CACHE_DIR` | **Not** `VLLM_*`. Compose default `/cache/huggingface/tilelang-cache` (HF volume). Issue #65: in-image `~/.tilelang/cache` dies on container recreate. |
+| `TRITON_CACHE_DIR` | **Not** `VLLM_*`. Compose default `/cache/huggingface/triton-cache` (HF volume). Issue #117: in-image `~/.triton/cache` dies on container recreate, so known shapes re-JIT mid-serve after every restart — and a compiling rank can stall its TP peer past torch's 600s NCCL watchdog. |
+| `DSPARK_BOOT_SHAPE_WARMUP` | Launcher-side (not passed to the container). `1` (default) runs `scripts/boot-shape-warmup.sh` after the smoke request. `_prepare_dflash_inputs_kernel` keys on `next_pow2(scheduled_tokens + 6)` only — request concurrency does not enter the key — so coverage comes from a deterministic ladder of exact-token plain completions (s = 1/6/20/45/100/200, each verified via an authenticated `/tokenize` before firing) hitting every live BLOCK key {8,16,32,64,128,256}. Chat arms C=1/2/4/6 up to the launcher's resolved `MAX_NUM_SEQS` cover both bounded longer prompts and ordinary short requests with client-default generation settings; medium/long-prefill and thinking-off cover other batch-keyed variants. `0` skips. Warmup failure is a WARN, never a boot failure. |
+| `DSPARK_WARMUP_REQ_TIMEOUT` | Launcher-side (read by `scripts/boot-shape-warmup.sh`, not passed to the container). Per-request curl `--max-time`, seconds, default **240** — first-ever boots pay real Triton compiles per request. Sequential worst case is 35 × timeout at the shipped `MAX_NUM_SEQS=6` default (23 × at `MAX_NUM_SEQS=4`) before the sweep exits nonzero and the launcher WARNs (non-fatal); raise it rather than skipping the sweep if first-boot compiles exceed the default. |
 | `TORCH_CUDA_ARCH_LIST` / `FLASHINFER_CUDA_ARCH_LIST` | Build/JIT arch lists |
 | `NCCL_*` / `TP_SOCKET_IFNAME` / `GLOO_SOCKET_IFNAME` | Fabric |
+| `NCCL_IB_MERGE_NICS` | Passthrough, default **unset**. Contract for all four passthrough knobs below: a configured non-empty value passes through unchanged; an empty value is normalized to absent (the entrypoint unsets empty definitions before exec, so NCCL's built-in default and config-file values still apply and cannot be masked). NCCL's own default is `1`: it *permits* merging compatible dual-port NICs; it does not select HCAs or force arbitrary links (`NCCL_NET_MERGE_LEVEL`/`NCCL_NET_FORCE_MERGE` participate in that topology decision). `0` disables merging. |
+| `NCCL_NET_GDR_LEVEL` | Passthrough, default **unset**. Upstream GPUDirect RDMA override; no effect demonstrated on the submitted GB10 stack (see `NCCL_DMABUF_ENABLE`). |
+| `NCCL_NET_GDR_READ` | Passthrough, default **unset**. Upstream GPUDirect RDMA override; no effect demonstrated on the submitted GB10 stack. |
+| `NCCL_DMABUF_ENABLE` | Passthrough, default **unset**. `0` disables DMA-BUF probing (workaround control). Contributor-reported observation on GB10 driver `580.173.02`, that stack only: the container reported `CU_DEVICE_ATTRIBUTE_DMA_BUF_SUPPORTED=0` and boot logs showed `via NET/IB/x` with no `/GDRDMA`; no GDR effect was demonstrated there, which is not a claim about GDR availability in general. |
 | `HF_*` / `TRANSFORMERS_OFFLINE` | Hub cache behavior |
 | `MTP_NUM_TOKENS` | Consumed by compose command line (not a vLLM env registry key) |
+| `DRAFT_SAMPLE_METHOD` | DSpark `draft_sample_method` in `--speculative-config`. Compose default **`probabilistic`** (the previously hardcoded value). `greedy` is what the official model cards pair with `num_speculative_tokens=7` (issue #84). Consumed by the compose command line, not a vLLM env registry key. The entrypoint (and `validate-dspark-config.sh`) accept exactly `probabilistic`/`greedy` and exit nonzero on anything else, so the raw value never reaches the `--speculative-config` JSON. |
+| `DSPARK_SUPPRESS_STOPS_IN_REASONING` | `1` (default): after the detokenizer hotfix, client `stop` stays dormant until `</think>`. `0` restores stock matching. Also accepts Tony's `VLLM_SUPPRESS_STOPS_IN_REASONING` via compose interpolation (not added as a compose `VLLM_*` key, so Anemll does not warn). |
+| `DSPARK_SKIP_SUPPRESS_STOPS_HOTFIX` | `1` skips applying `patches/hotfix-dsv4-suppress-stops-in-reasoning.py` |
+| `DSPARK_SKIP_SPIN_WAIT_HOTFIX` | `1` skips `patches/hotfix-gb10-spin-wait.sh` (issue #79: `busy_loop_s` 1s→2ms) |
+| `DSPARK_ENABLE_ISSUE31_GPU_HOTFIX` | **Not** `VLLM_*`. Default `0` = stock V2 (no thinking_token_budget). `1` applies the GPU budget hotfix at boot (fail-closed). Issue #66: default-on omit-field traffic can hit a decode cliff. |
+| `VLLM_API_KEY` | **Optional single-key auth** for the OpenAI endpoint, consumed natively by vLLM (its `--api-key` env alias). Empty (default) = no auth. Exactly one key. Mutually exclusive with `DSPARK_API_KEYS`. |
+| `DSPARK_API_KEYS` | **Optional multi-key auth**, enforced by vLLM itself. Single-line keys use literal space/tab separators and are flattened into **one** `--api-key` flag (nargs list; repeating the flag would overwrite). Empty or space/tab-only (default) adds no flag, preserving stock behavior. Parsing trims/collapses separators, preserves order, allows duplicates, rejects CR/LF/VT/FF before empty classification, rejects backslashes, and rejects tokens starting with `-` without echoing token bytes (exit 2); it must be set in `.env.dspark`, not the shell. **Mutually exclusive with `VLLM_API_KEY`**: if both are meaningful, the entrypoint and `start-`/`smoke-`/`status-*.sh` scripts exit 2 before patch/install work. Every route outside the guarded prefixes `/v1`, `/v2`, `/inference` is keyless. On the pinned runtime that includes `POST /invocations` and `POST /generative_scoring` (both run inference unauthenticated) and the `/tokenize` / `/detokenize` utility routes, besides `/health`, `/metrics`, `/version`, `/ping`; a keyed deployment still needs network-level access control on the server port. Keys remain container argv/env, so rotation needs a stop/start; vLLM provides revocation rather than per-key request attribution. |
+| `patches/hotfix-vllm-redact-api-key-log.sh` | Key-log redaction hotfix, required whenever either key variable is configured; apply + `--status` must succeed or the entrypoint fails the container before exec vllm, and `--status` exits nonzero unless every check passes. Upstream `log_non_default_args()` prints every `--api-key` value verbatim; the patch redacts that logger for both entrypoints while preserving the count as `'api_key': ['<redacted:N value(s)>']`. This closes the log channel only; keys remain visible through `docker inspect` / host `ps`. |
 
 ### B. Stage-C / overlay-registered only (warn + no-op on Anemll 0.1.1)
 
@@ -110,6 +128,9 @@ docker compose --env-file .env.dspark \
 | `B12X_W4A16_TC_DECODE` | Non-`VLLM_` package/debug knob |
 | `VLLM_HOST` / `VLLM_PORT` | Used by **compose command substitution** / start scripts, not as in-process vLLM config envs in the same way as registry keys |
 | `DSPARK_MODEL`, `DSPARK_REVISION`, `DSPARK_VLLM_IMAGE`, `ENABLE_VLLM_GB10_PATCH`, … | Launcher / compose only |
+| `DSPARK_RESTART_POLICY` | Compose `restart:` (default `unless-stopped`, issue #38). After a reboot, dockerd restores the ranks, so `./start-…` exits **3** (already running) rather than 1. Supervising the launcher: set systemd `SuccessExitStatus=3` + `RemainAfterExit=yes`, or set `DSPARK_RESTART_POLICY=no` if the unit owns start/stop. Exit 3 does **not** prove the TP group is healthy (head-only reboot can leave a stale worker). |
+| `DSPARK_STOP_GRACE` | Compose `stop_grace_period` (default `10s`; do not use 180s — hangs stop) |
+
 
 ---
 

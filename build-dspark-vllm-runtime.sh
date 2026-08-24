@@ -26,7 +26,7 @@ build_one() {
       -t "$DSPARK_BASE_IMAGE" \
       "$SCRIPT_DIR/recipe/overlay"
     docker run --rm --entrypoint /opt/env/bin/python "$DSPARK_BASE_IMAGE" -c \
-      "import vllm.v1.spec_decode.dspark as d; import vllm.v1.spec_decode.dspark_proposer as p; print('dspark overlay ok', d.__name__, p.__name__)"
+      "import vllm.v1.spec_decode.dspark as d; import vllm.v1.spec_decode.dspark_proposer as p; assert d.map_dspark_stacked_param_name('model.layers.0.ffn.shared_experts.w1.weight') == ('model.layers.0.ffn.shared_experts.gate_up_proj.weight', 0); print('dspark overlay ok', d.__name__, p.__name__)"
     docker build \
       --build-arg BASE_IMAGE="$DSPARK_BASE_IMAGE" \
       -f "$SCRIPT_DIR/recipe/nvfp4/Dockerfile.stage-a" \

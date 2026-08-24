@@ -197,6 +197,8 @@ run_download() {
     -e HF_HUB_OFFLINE=0 \
     -e TRANSFORMERS_OFFLINE=0 \
     -e HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}" \
+    -e HF_HUB_DOWNLOAD_TIMEOUT="${HF_HUB_DOWNLOAD_TIMEOUT:-120}" \
+    -e HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-30}" \
     -e DSPARK_MODEL="$model" \
     -e DSPARK_REVISION="$revision" \
     -e HF_DOWNLOAD_WORKERS="$HF_DOWNLOAD_WORKERS" \
@@ -237,6 +239,8 @@ verify_cache() {
     -e HF_HUB_OFFLINE=1 \
     -e TRANSFORMERS_OFFLINE=1 \
     -e HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}" \
+    -e HF_HUB_DOWNLOAD_TIMEOUT="${HF_HUB_DOWNLOAD_TIMEOUT:-120}" \
+    -e HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-30}" \
     -e DSPARK_MODEL="$model" \
     -e DSPARK_REVISION="$revision" \
     --entrypoint "$IMAGE_PYTHON" \
