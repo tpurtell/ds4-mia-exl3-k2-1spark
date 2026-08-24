@@ -9,7 +9,7 @@ FROM ${EXL3_SOURCE_IMAGE} AS exl3_source
 FROM ${MIA_BASE_IMAGE}
 
 ARG B12X_REPOSITORY=https://github.com/tpurtell/sparkinfer-glmrt.git
-ARG B12X_COMMIT=51ae901913f393f7524c425c9d27da15177c3ec6
+ARG B12X_COMMIT=28e083482fd18ca3ce0e2553cd533102be85552f
 
 SHELL ["/bin/bash", "-c"]
 
@@ -83,21 +83,52 @@ COPY --from=exl3_source \
 COPY patches/port-exl3-mia.py /tmp/port-exl3-mia.py
 RUN python3 /tmp/port-exl3-mia.py \
     /usr/local/lib/python3.12/dist-packages/vllm
+COPY patches/port-exl3-mixed.py /tmp/port-exl3-mixed.py
+RUN python3 /tmp/port-exl3-mixed.py \
+    /usr/local/lib/python3.12/dist-packages/vllm
 
 # Mia's current recipe applies these selected vLLM 0.27 DSV4 backports at
 # launch. Bake the same idempotent patches into the public image instead.
 COPY patches/hotfix-dsv4-skip-topk-49486.sh \
      patches/hotfix-dsv4-mtp-buffer-50312.sh \
-     patches/hotfix-dsv4-adaptive-topk-50004.sh \
      patches/hotfix-dsv4-skip-empty-c128-48957.sh \
      patches/hotfix-dsv4-flashmla-workspace-50298.sh \
      patches/hotfix-dsv4-dense-prefill-indexer-48407.sh \
      patches/hotfix-dsv4-grammar-advance.sh \
+     patches/hotfix-gb10-spin-wait.sh \
+     patches/hotfix-vllm-redact-api-key-log.sh \
      /tmp/mia-hotfixes/
 COPY patches/hotfix-nvfp4-ds-mla-issue22.sh /tmp/mia-hotfixes/hotfix-nvfp4-ds-mla-issue22.sh
 RUN for patch in /tmp/mia-hotfixes/*.sh; do \
       VLLM_ROOT=/usr/local/lib/python3.12/dist-packages/vllm bash "${patch}"; \
     done
+
+# Keep the one-Spark image on the same mandatory Python hotfix set as the
+# current upstream recipe. Optional behavior-changing patches stay available
+# to the entrypoint and remain opt-in.
+COPY patches/hotfix-encoding-dsv4-issue21.py \
+     patches/port-dsv4-reasoning-effort.py \
+     patches/hotfix-vllm-safetensors-index.py \
+     patches/hotfix-dsv4-issue55-tool-truncation.py \
+     patches/hotfix-vllm-empty-encoder-output.py \
+     patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py \
+     patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py \
+     patches/hotfix-dsv4-issue26-hybrid-swa-min.py \
+     patches/hotfix-dsv4-suppress-stops-in-reasoning.py \
+     patches/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py \
+     patches/hotfix-dsv4-assistant-final-continuation.py \
+     /opt/recipe/patches/
+RUN python3 /opt/recipe/patches/port-dsv4-reasoning-effort.py && \
+    python3 /opt/recipe/patches/hotfix-encoding-dsv4-issue21.py && \
+    python3 /opt/recipe/patches/hotfix-vllm-safetensors-index.py \
+      /usr/local/lib/python3.12/dist-packages/vllm && \
+    python3 /opt/recipe/patches/hotfix-dsv4-issue55-tool-truncation.py \
+      /usr/local/lib/python3.12/dist-packages/vllm && \
+    python3 /opt/recipe/patches/hotfix-vllm-empty-encoder-output.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-issue26-hybrid-swa-min.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-suppress-stops-in-reasoning.py
 
 RUN python3 - <<'PY'
 from pathlib import Path
@@ -134,8 +165,10 @@ COPY scripts /opt/recipe/scripts
 RUN chmod 0755 /opt/recipe/scripts/*.sh
 
 LABEL org.opencontainers.image.source="https://github.com/tpurtell/ds4-mia-exl3-k2-1spark" \
-      org.opencontainers.image.description="Mia DeepSeek V4 Flash DSpark runtime with EXL3 K2 support" \
+      org.opencontainers.image.description="Mia DeepSeek V4 Flash DSpark runtime with EXL3 K2 and mixed K2/K3 support" \
       org.opencontainers.image.licenses="MIT"
 
 EXPOSE 8888
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30m --retries=10 \
+  CMD curl -fsS "http://127.0.0.1:${VLLM_PORT:-8888}/health" >/dev/null || exit 1
 ENTRYPOINT ["/opt/recipe/scripts/k2-entrypoint.sh"]

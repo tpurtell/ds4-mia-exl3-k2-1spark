@@ -35,10 +35,18 @@ NEW = """    raw = tool_call["arguments"]
         except (TypeError, ValueError):
             arguments = {"arguments": raw}"""
 
+# The Anemll base image carries an equivalent newer implementation. Treat it
+# as already fixed instead of failing a build merely because its spelling is
+# different from the upstream checkpoint encoder.
+SAFE = """    if isinstance(tool_call["arguments"], str):
+        arguments = json.loads(tool_call["arguments"])
+    else:
+        arguments = tool_call["arguments"]"""
+
 
 def patch_text(source: str) -> tuple[str, str]:
     """Return (updated_text, status) where status is applied|skipped|missing."""
-    if NEW in source:
+    if NEW in source or SAFE in source:
         return source, "skipped"
     if OLD not in source:
         return source, "missing"

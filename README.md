@@ -1,4 +1,4 @@
-# DeepSeek V4 Flash EXL3 K2 on DGX Spark
+# DeepSeek V4 Flash EXL3 K2 and K2.1 on DGX Spark
 
 Mia built the Spark race car. This fork gives it a much smaller fuel tank.
 
@@ -6,14 +6,30 @@ This recipe starts from
 [MiaAI-Lab's DeepSeek V4 Flash DSpark recipe](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark)
 and keeps her serving stack intact: the Anemll GX10 vLLM runtime, native
 dSpark, NVFP4 DS-MLA cache, async scheduling, RoCE transport, regular CUDA
-graphs, and her selected DeepSeek V4 fixes from vLLM 0.27. The addition is a
-standard Hugging Face EXL3 K2 checkpoint that fits on **one DGX Spark**.
+graphs, and her selected DeepSeek V4 fixes from vLLM 0.27. This fork adds
+standard Hugging Face EXL3 checkpoints that fit on **one DGX Spark**, including
+uniform K2 and mixed K2/K3 (the 2.1-bit K2.1 variants).
 
 The default launch serves
 [`wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1`](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1)
 with a **1,000,000-token** request ceiling, six active sequences, 0.85 GPU
 memory utilization, and the checkpoint's own five-token dSpark draft. Nothing
 is rank-sliced on disk; TP2 slices the ordinary checkpoint while loading.
+
+The same image also serves the other calibrated variants:
+
+| Launch name | Checkpoint | Expert layout |
+| --- | --- | --- |
+| `k2-v0` | `DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v0` | Uniform K2, original top-6/legal calibration |
+| `k2` / `k2-v1` | `DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1` | Uniform K2, rare-expert fallback and math calibration |
+| `k21-v1` | `DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v1` | Per-expert K2/K3 mix in the target and draft |
+| `k21` / `k21-v2` | `DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v2` | Per-expert K2/K3 target with a forced-K2 dSpark draft |
+
+K2.1 is not rounded to K2 or K3. The loader reads each expert's integer
+`bits_per_weight` metadata and dispatches the K2 and K3 tiers separately. The
+checkpoint-wide realized average remains descriptive metadata, so the embedded
+Hugging Face `quantization_config` intentionally omits its non-integer `bits`
+field.
 
 | Configuration | C1 TTFT | C1 stream | C4 aggregate | C4 stream | 131K prefill | 131K TTFT | Tool Eval |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -77,6 +93,16 @@ Docker Compose is also ready for the one-Spark default:
 docker compose up -d
 ```
 
+To try the recommended mixed checkpoint instead, cache it and select `k21`:
+
+```bash
+hf download \
+  wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v2 \
+  --revision a2b066719ebdc0cbb0eacc752ffe7a2190c919aa
+
+./launch.sh --nodes 1 --model k21
+```
+
 ## Two Sparks, if they are sitting there looking bored
 
 Put the same HF snapshot and container image on both machines. Set the host,
@@ -109,6 +135,7 @@ Stop either layout with:
 | Knob | Default | Why |
 | --- | ---: | --- |
 | `MODEL_KIND` | `k2` | Calibrated EXL3 K2 target plus its native dSpark draft |
+| `DISTRIBUTED_EXECUTOR_BACKEND` | automatic | `uni` on one Spark; `mp` for multi-Spark launches |
 | `MAX_MODEL_LEN` | `1000000` | Decimal one-million-token request ceiling |
 | `MAX_NUM_SEQS` | `6` | Mia's low-concurrency agent-serving shape |
 | `MAX_NUM_BATCHED_TOKENS` | `8192` | Chunked-prefill budget |
@@ -120,6 +147,10 @@ Stop either layout with:
 
 The KV cache is a shared pool, not six eagerly allocated one-million-token
 slots. Requests consume cache when admitted; excess work waits for room.
+
+The launch path also protects the kernel compiler from empty Compose values:
+`CUTE_DSL_ARCH` resolves to `sm_121a`, and memory/model-length knobs use
+non-empty defaults even if their environment entries are blank.
 
 ## Performance
 
@@ -256,10 +287,10 @@ Raw benchmark evidence:
 | Runtime | Mia/Anemll vLLM `0.25.2.dev0+g752a3a504.d20260714`, pinned by digest |
 | DeepSeek fixes | Mia's selected vLLM 0.27 backports, including the structured-output boundary fix, baked into the image |
 | Long NVFP4 decode | Mia Issue #22 fast-dispatch fix, baked and asserted at build time |
-| Expert weights | Standard-HF calibrated EXL3 K2 target and dSpark experts |
-| Expert kernels | Current b12x/Trellis serving fork, with Mia's native MXFP4 modules retained |
-| Loader | InstantTensor streaming with bounded CUDA allocator retention on unified memory |
-| Topology | K2 defaults to one Spark; K2 TP2 and native TP2 are launch options |
+| Expert weights | Standard-HF calibrated EXL3 K2 or per-expert K2/K3 target and dSpark experts |
+| Expert kernels | Current b12x/Trellis serving fork with mixed-tier kernels; Mia's native MXFP4 modules retained |
+| Loader | Index-aware InstantTensor streaming with bounded CUDA allocator retention on unified memory |
+| Topology | K2/K2.1 default to one Spark; EXL3 TP2 and native TP2 are launch options |
 | Draft | DeepSeek's own dSpark block—not a REAP-pruned or external draft model |
 
 The EXL3 source image is used only as a Docker source stage for the quantizer
@@ -284,9 +315,13 @@ EXL3 registry, native MXFP4 imports, and the NVFP4 fast decode dispatch.
 - Mia base image:
   `ghcr.io/anemll/dspark-vllm-gx10@sha256:a83948492cf13df455170fb42885f5ef4db54fefe0feff0f841ecbff464ac9d8`
 - b12x serving fork commit:
-  `51ae901913f393f7524c425c9d27da15177c3ec6`
+  `28e083482fd18ca3ce0e2553cd533102be85552f`
 - calibrated K2 revision:
   `68eaca43e99bfbfd697a5559c7796b983deb38f8`
+- calibrated K2.1 v1 config revision:
+  `73757f619a951d812fe8008a39dbade8df20e6c6`
+- calibrated K2.1 v2 config revision:
+  `a2b066719ebdc0cbb0eacc752ffe7a2190c919aa`
 - native checkpoint revision:
   `9e165c30e2704aec5d9d593cce3eebd58bbef1cb`
 

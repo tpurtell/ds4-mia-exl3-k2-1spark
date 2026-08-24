@@ -142,10 +142,21 @@ def main(root: Path) -> None:
         "            None,\n"
         "        )\n"
         "        for name, loaded_weight in weights:\n"
+        "            original_name = name\n"
         "            if normalize is not None:\n"
         "                name = normalize(name)\n"
         "            mapped = self._remap_dspark_name(name)",
         "normalize standard EXL3 draft names",
+    )
+    replace_once(
+        dspark,
+        "                        loaded_weight,\n"
+        "                        name_mapped,\n"
+        "                        shard_id=shard_id,\n",
+        "                        loaded_weight,\n"
+        "                        original_name,\n"
+        "                        shard_id=shard_id,\n",
+        "retain draft checkpoint names in expert loader diagnostics",
     )
 
     compile(registry.read_text(), str(registry), "exec")

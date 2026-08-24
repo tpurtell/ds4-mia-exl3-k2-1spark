@@ -17,14 +17,17 @@ while (( $# )); do
     --nodes) nodes=$2; shift 2 ;;
     --model) model_kind=$2; shift 2 ;;
     -h|--help)
-      echo "usage: $0 [--nodes 1|2] [--model k2|native]"
+      echo "usage: $0 [--nodes 1|2] [--model k2|k2-v0|k2-v1|k21|k21-v1|k21-v2|native]"
       exit 0
       ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 case "${nodes}" in 1|2) ;; *) echo "--nodes must be 1 or 2" >&2; exit 2 ;; esac
-case "${model_kind}" in k2|native) ;; *) echo "--model must be k2 or native" >&2; exit 2 ;; esac
+case "${model_kind}" in
+  k2|k2-v0|k2-v1|k21|k21-v1|k21-v2|native) ;;
+  *) echo "unsupported --model '${model_kind}'" >&2; exit 2 ;;
+esac
 if (( nodes == 1 )) && [[ "${model_kind}" == native ]]; then
   echo "The native checkpoint needs two Sparks; use --nodes 2." >&2
   exit 2
@@ -81,6 +84,9 @@ common_args=(
   --ulimit stack=67108864:67108864
   -v "${hf_cache}:/cache/huggingface"
   -e MODEL_KIND="${model_kind}"
+  -e MODEL_REPO="${MODEL_REPO:-}"
+  -e MODEL_REVISION="${MODEL_REVISION:-}"
+  -e SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-}"
   -e HF_HOME=/cache/huggingface
   -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
   -e HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
@@ -89,12 +95,25 @@ common_args=(
   -e MAX_MODEL_LEN="${MAX_MODEL_LEN:-1000000}"
   -e MAX_NUM_SEQS="${MAX_NUM_SEQS:-6}"
   -e MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
+  -e LONG_PREFILL_TOKEN_THRESHOLD="${LONG_PREFILL_TOKEN_THRESHOLD:-1024}"
   -e MAX_CUDAGRAPH_CAPTURE_SIZE="${MAX_CUDAGRAPH_CAPTURE_SIZE:-36}"
   -e GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.85}"
   -e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-nvfp4_ds_mla}"
   -e PREFIX_CACHE="${PREFIX_CACHE:-1}"
   -e DSPARK_TOKENS="${DSPARK_TOKENS:-5}"
+  -e DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-probabilistic}"
   -e DEFAULT_THINKING="${DEFAULT_THINKING:-max}"
+  -e DSPARK_MAX_INFLIGHT_PREFILLS="${DSPARK_MAX_INFLIGHT_PREFILLS:-2}"
+  -e DSPARK_ISSUE43_SCHED_DIAG="${DSPARK_ISSUE43_SCHED_DIAG:-0}"
+  -e VLLM_PREFIX_CACHE_RETENTION_INTERVAL="${VLLM_PREFIX_CACHE_RETENTION_INTERVAL:-4096}"
+  -e DSPARK_ENABLE_ISSUE31_GPU_HOTFIX="${DSPARK_ENABLE_ISSUE31_GPU_HOTFIX:-0}"
+  -e DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX="${DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX:-0}"
+  -e DSPARK_SUPPRESS_STOPS_IN_REASONING="${DSPARK_SUPPRESS_STOPS_IN_REASONING:-1}"
+  -e VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS="${VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS:-1800}"
+  -e TILELANG_CACHE_DIR="${TILELANG_CACHE_DIR:-/cache/huggingface/tilelang-cache}"
+  -e TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-/cache/huggingface/triton-cache}"
+  -e B12X_COMPILE_CACHE_DIR="${B12X_COMPILE_CACHE_DIR:-/cache/huggingface/b12x-compile-cache}"
+  -e DISTRIBUTED_EXECUTOR_BACKEND="${DISTRIBUTED_EXECUTOR_BACKEND:-}"
   -e CUTE_DSL_ARCH=sm_121a
   -e VLLM_ALLOW_LONG_MAX_MODEL_LEN=1
   -e VLLM_SPARSE_INDEXER_MAX_LOGITS_MB="${VLLM_SPARSE_INDEXER_MAX_LOGITS_MB:-256}"
@@ -112,6 +131,19 @@ common_args=(
   -e NCCL_IGNORE_CPU_AFFINITY="${NCCL_IGNORE_CPU_AFFINITY:-1}"
   -e NCCL_NVLS_ENABLE="${NCCL_NVLS_ENABLE:-0}"
 )
+
+if [[ -n "${VLLM_API_KEY:-}" ]]; then
+  common_args+=(-e VLLM_API_KEY="${VLLM_API_KEY}")
+fi
+if [[ -n "${DSPARK_API_KEYS:-}" ]]; then
+  common_args+=(-e DSPARK_API_KEYS="${DSPARK_API_KEYS}")
+fi
+for optional_nccl_env in \
+  NCCL_IB_MERGE_NICS NCCL_NET_GDR_LEVEL NCCL_NET_GDR_READ NCCL_DMABUF_ENABLE; do
+  if [[ -n "${!optional_nccl_env:-}" ]]; then
+    common_args+=(-e "${optional_nccl_env}=${!optional_nccl_env}")
+  fi
+done
 
 if (( nodes == 1 )); then
   name=${container_prefix}-${model_kind}-tp1
