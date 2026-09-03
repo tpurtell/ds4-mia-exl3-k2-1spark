@@ -61,7 +61,12 @@ class WindowReportingTest(unittest.TestCase):
         original_argv = sys.argv
         self.bench_calls = []
         sa.get_metrics = lambda _url: next(snapshots)
-        sa.subprocess.run = lambda *_a, **_k: self.bench_calls.append(_a)
+        sa.subprocess.run = lambda *_a, **_k: (
+            self.bench_calls.append(_a)
+            or sa.subprocess.CompletedProcess(
+                _a[0], 0, stdout="", stderr=""
+            )
+        )
         sys.argv = ["spec-acceptance.py", "--trials", "2"]
         try:
             output = io.StringIO()

@@ -58,6 +58,8 @@ def main() -> int:
     ap.add_argument("--model", default="deepseek-v4-flash-0731")
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--prompt", type=int, default=256)
+    ap.add_argument("--temperature", type=float, default=0.6)
+    ap.add_argument("--output-tokens", type=int, default=128)
     ap.add_argument("--bench-script", default="scripts/bench-miaai.py",
                     help="MiaAI-methodology bench that moves the counters")
     args = ap.parse_args()
@@ -70,8 +72,16 @@ def main() -> int:
 
     cmd = [sys.executable, args.bench_script, "--base-url", args.base_url,
            "--model", args.model, "--prompt", str(args.prompt),
-           "--concurrency", "1", "--repeat", str(args.trials)]
-    subprocess.run(cmd, capture_output=True)
+           "--concurrency", "1", "--repeat", str(args.trials),
+           "--temperature", str(args.temperature),
+           "--output-tokens", str(args.output_tokens)]
+    bench = subprocess.run(cmd, capture_output=True, text=True)
+    if bench.stdout:
+        print(bench.stdout.rstrip(), file=sys.stderr)
+    if bench.returncode != 0:
+        if bench.stderr:
+            print(bench.stderr.rstrip(), file=sys.stderr)
+        return bench.returncode
 
     m2 = get_metrics(args.base_url)
     if m2["drafted"] is None or m2["accepted"] is None:

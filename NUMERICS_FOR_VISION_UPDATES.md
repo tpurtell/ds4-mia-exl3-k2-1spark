@@ -1,6 +1,6 @@
 # Numerics and synchronization changes through the Vision release
 
-Date: 2026-09-03
+Date: 2026-09-04
 
 ## Bottom line
 
@@ -176,6 +176,78 @@ the measured mixed checkpoints but is a host-planning/performance correction;
 it was not present in, and cannot explain, the earlier 116/138 and 117/138
 uniform-checkpoint Tool Eval scores analyzed above.
 
+### Controlled K3/K4/K5 and the apparent four-token boundary
+
+A later fixed-output sweep used the same Vision K2.2-D2 checkpoint, one request
+at a time, temperature zero, a 256-token prompt, and ten 128-token
+continuations. The per-position counters below are cumulative prefix
+acceptance: position 4 can be accepted only when positions 1--3 were also
+accepted.
+
+| Draft width | Decode | Accepted / drafted | Prefix acceptance by draft position |
+| --- | ---: | ---: | --- |
+| K3 | **44.6 tok/s** | 924 / 1,047 (88.3%) | 96.8%, 84.0%, 84.0% |
+| K4 | 42.5 tok/s | 938 / 1,328 (70.6%) | 98.5%, 88.0%, 82.8%, **13.3%** |
+| K5 | 39.3 tok/s | 942 / 1,640 (57.4%) | 100.0%, 86.9%, 82.9%, **11.6%**, 5.8% |
+
+The sharp drop is specifically at the fourth proposal. In the K5 run, the
+fifth proposal's conditional acceptance after reaching it is about 50%
+(`5.8 / 11.6`), so the fifth slot is not independently collapsing. It is
+usually discarded because speculative acceptance stops at the first mismatch.
+An inspected cycle illustrated exactly that: the draft proposed tokens
+equivalent to `"\n", "2", ".", " the", "\n"`, while the target wanted
+`"\n", "2", ".", " banana", "\n"`. The fifth proposal matched in isolation
+but could not be accepted after the fourth-token mismatch.
+
+The suspected phase lock is mathematically possible. When a cycle accepts
+three drafts and commits the target's replacement token, it advances by four;
+an absolute `position mod 4` defect would therefore recur at the same phase on
+the next cycle. Two controls narrow that hypothesis:
+
+1. Shifting prompt length through all four absolute modulo-4 residues did not
+   move the failure. Each residue produced the same acceptance curve in the
+   controlled probe. That argues against an ordinary absolute sequence-index
+   boundary.
+2. K4's five target-verification rows were forced through DeepGEMM's paged-MQA
+   indexer scorer one row at a time, using the same single-row route as plain
+   decode. Its result was bit-for-bit identical at the counter level to the
+   stock K4 run: `327/332`, `292/332`, `275/332`, and `44/332` accepted.
+   Throughput was also effectively unchanged (42.0 versus 42.5 tok/s). This
+   rules out batched sparse-indexer scoring/top-k as the source of the cliff.
+
+Temperature-zero continuations can still diverge between no-spec, K1, K3, and
+K4, and even between cold and prefix-cached execution of no-spec. The target's
+`q_len > 1` verification route is therefore not bitwise equivalent to its
+one-token route, but those general low-bit differences occur below K4 as well;
+they do not isolate a C4 defect. The current evidence supports a weak fourth
+Vision draft slot much more strongly than an indexer mix-up.
+
+This conclusion also matches DeepSeek's published
+[Vision-Exp vLLM launch](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp),
+which explicitly selects `num_speculative_tokens: 3` despite the checkpoint's
+five-slot training block. The recipe therefore keeps K3 for Vision and does
+not carry a custom arbitrary-width bypass merely to enable K4/K5.
+
+### Equal-width cycle-cost isolation
+
+Longer 512-token, temperature-zero runs measured wall time per completed K3
+speculative cycle. This separates the cost of a forward cycle from the number
+of draft tokens accepted in that cycle:
+
+| Checkpoint | Median decode | Median cycle time | Median emitted tokens/cycle |
+| --- | ---: | ---: | ---: |
+| Vision K2.2-D2, projection-mixed | 45.17 tok/s | 82.08 ms | 3.71 |
+| Vision K2, uniform | 35.70 tok/s | **79.68 ms** | 3.14 |
+| 0731 calibrated K2-v1, uniform | **50.18 tok/s** | 79.03 ms | **3.97** |
+
+The projection-mixed Vision representation costs about 3% per K3 cycle versus
+uniform Vision K2. Its much larger accepted span more than repays that cost,
+which is why K2.2-D2 remains the quality default. A separate no-spec control
+measured Vision K2.2-D2 at 19.7 tok/s and 0731 K2-v1 at 19.3 tok/s. The target
+baseline is not slower; the speculative gap comes from draft-cycle cost and
+acceptance, with the mixed K2/K3 execution accounting for most of the small raw
+cycle-time penalty.
+
 ## Synchronization and state-machine changes
 
 ### B12X intra-kernel synchronization
@@ -287,6 +359,17 @@ while losing TC-34, TC-43, TC-57, and TC-58. Again, this is bidirectional
 behavior around decision boundaries rather than a blanket loss of tool-call
 ability.
 
+### TC-68 concurrency control
+
+The final Vision K2.2-D2 K3 Tool Eval was repeated with four scenarios in
+parallel using the same 69-scenario suite. It scored 120/138 (overall 87),
+versus 118/138 (overall 86) in the one-at-a-time qualification, with zero API
+errors. TC-68 specifically changed from a 0-point unnecessary `search_files`
+call to a 2-point schema-compliant JSON response with no tool call. This does
+not prove concurrency is numerically inert, but it is direct evidence against
+concurrency being the trigger for the observed TC-68 failure. The single-run
+variation is consistent with a marginal within-request generation decision.
+
 ## Benchmark confounders
 
 The August and September scores are useful release observations, but they are
@@ -343,6 +426,7 @@ expert-packed routing before investigating the synchronization-only patches.
 - [September Vision K2-v1 Tool Eval](results/tool-eval-vision-k2-tp1-20260903.json)
 - [0731 pre-fix XGrammar run](results/tool-eval-old-k2-v1-tp1-20260903-xgrammar-baseline.json)
 - [Vision pre-fix XGrammar run](results/tool-eval-vision-k2-tp1-20260903-xgrammar-baseline.json)
+- [Vision K2.2-D2 parallel-4 Tool Eval](results/tool-eval-vision-k22-d2-v1-k3-tp1-p4-20260903.json)
 - [EXL3/B12X adapter](patches/port-exl3-mixed.py)
 - [Issue-133 Triton specialization patch](patches/hotfix-dsv4-issue133-triton-specialization.py)
 - [Issue-117 shared-memory ring patch](patches/hotfix-vllm-issue117-shm-ring-buffer.py)

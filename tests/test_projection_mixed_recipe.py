@@ -82,8 +82,24 @@ class ProjectionMixedRecipeTest(unittest.TestCase):
         entrypoint = (ROOT / "scripts" / "k2-entrypoint.sh").read_text()
         self.assertIn("minimum_dspark_tokens=3", entrypoint)
         self.assertIn("minimum_dspark_tokens=5", entrypoint)
-        self.assertIn("dspark_tokens < minimum_dspark_tokens", entrypoint)
+        self.assertIn(
+            "dspark_tokens != 0 && dspark_tokens < minimum_dspark_tokens",
+            entrypoint,
+        )
         self.assertIn("vision_model && dspark_tokens % 3 != 0", entrypoint)
+
+    def test_no_spec_diagnostic_and_eager_mode_are_wired(self) -> None:
+        entrypoint = (ROOT / "scripts" / "k2-entrypoint.sh").read_text()
+        launcher = (ROOT / "launch.sh").read_text()
+        compose = (ROOT / "compose.yaml").read_text()
+        self.assertIn("if (( dspark_tokens > 0 )); then", entrypoint)
+        self.assertIn('speculative_args=(--speculative-config "${speculative_config}")', entrypoint)
+        self.assertIn('"${speculative_args[@]}"', entrypoint)
+        self.assertIn('case "${DSPARK_ENFORCE_EAGER:-0}" in', entrypoint)
+        self.assertIn('eager_args=(--enforce-eager)', entrypoint)
+        self.assertIn('"${eager_args[@]}"', entrypoint)
+        self.assertIn('DSPARK_ENFORCE_EAGER="${DSPARK_ENFORCE_EAGER:-0}"', launcher)
+        self.assertIn("DSPARK_ENFORCE_EAGER: ${DSPARK_ENFORCE_EAGER:-0}", compose)
 
 
 if __name__ == "__main__":

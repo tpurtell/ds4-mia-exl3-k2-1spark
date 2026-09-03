@@ -78,7 +78,7 @@ if [[ ! "${dspark_tokens}" =~ ^[0-9]+$ ]]; then
   echo "DSPARK_TOKENS must be a non-negative integer; got '${dspark_tokens}'" >&2
   exit 2
 fi
-if (( dspark_tokens < minimum_dspark_tokens )); then
+if (( dspark_tokens != 0 && dspark_tokens < minimum_dspark_tokens )); then
   echo "DSPARK_TOKENS must be at least ${minimum_dspark_tokens} for this checkpoint; got '${dspark_tokens}'" >&2
   exit 2
 fi
@@ -86,7 +86,6 @@ if (( vision_model && dspark_tokens % 3 != 0 )); then
   echo "Vision-Exp requires DSPARK_TOKENS divisible by 3; got '${dspark_tokens}'" >&2
   exit 2
 fi
-
 model_ref=${MODEL_PATH:-${model_repo}}
 revision_args=()
 if [[ -n "${model_revision}" && -z "${MODEL_PATH:-}" ]]; then
@@ -140,6 +139,13 @@ if [[ "${PREFIX_CACHE:-1}" == 1 ]]; then
   prefix_args=(--enable-prefix-caching)
 fi
 
+eager_args=()
+case "${DSPARK_ENFORCE_EAGER:-0}" in
+  0) ;;
+  1) eager_args=(--enforce-eager) ;;
+  *) echo "DSPARK_ENFORCE_EAGER must be 0 or 1" >&2; exit 2 ;;
+esac
+
 thinking=${DEFAULT_THINKING:-max}
 case "${thinking}" in
   off) chat_kwargs='{"thinking":false}' ;;
@@ -155,9 +161,13 @@ case "${draft_sample_method}" in
     exit 2
     ;;
 esac
-speculative_config=$(printf \
-  '{"method":"dspark","num_speculative_tokens":%s,"draft_sample_method":"%s"}' \
-  "${dspark_tokens}" "${draft_sample_method}")
+speculative_args=()
+if (( dspark_tokens > 0 )); then
+  speculative_config=$(printf \
+    '{"method":"dspark","num_speculative_tokens":%s,"draft_sample_method":"%s"}' \
+    "${dspark_tokens}" "${draft_sample_method}")
+  speculative_args=(--speculative-config "${speculative_config}")
+fi
 
 api_key_args=()
 case "${DSPARK_API_KEYS:-}" in
@@ -291,7 +301,11 @@ if [[ ! "${max_num_seqs}" =~ ^[1-9][0-9]*$ ]]; then
 fi
 max_cudagraph_capture_size=${MAX_CUDAGRAPH_CAPTURE_SIZE:-}
 if [[ -z "${max_cudagraph_capture_size}" ]]; then
-  max_cudagraph_capture_size=$((max_num_seqs * (dspark_tokens + 1)))
+  if (( dspark_tokens > 0 )); then
+    max_cudagraph_capture_size=$((max_num_seqs * (dspark_tokens + 1)))
+  else
+    max_cudagraph_capture_size=${max_num_seqs}
+  fi
   if (( vision_model )); then
     max_cudagraph_capture_size=$(((max_cudagraph_capture_size + 7) / 8 * 8))
   fi
@@ -319,10 +333,11 @@ exec /usr/local/bin/vllm serve "${model_ref}" \
   --gpu-memory-utilization "${gpu_memory_utilization}" \
   --load-format "${LOAD_FORMAT:-instanttensor}" \
   "${prefix_args[@]}" \
+  "${eager_args[@]}" \
   --enable-prompt-tokens-details \
   --async-scheduling \
   --enable-chunked-prefill \
-  --speculative-config "${speculative_config}" \
+  "${speculative_args[@]}" \
   --tokenizer-mode deepseek_v4 \
   "${limit_mm_args[@]}" \
   --distributed-executor-backend "${executor_backend}" \

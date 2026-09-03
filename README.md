@@ -160,6 +160,7 @@ Stop it with `./stop.sh`.
 | `GPU_MEMORY_UTILIZATION` | `0.85`; `0.86` for `vision-k22` | Model-aware KV-cache allocation target |
 | `KV_CACHE_DTYPE` | `nvfp4_ds_mla` | Compact DeepSeek V4 hybrid cache |
 | `DSPARK_TOKENS` | `5` for 0731; `3` for Vision-Exp | Model-aware speculative proposal width |
+| `DSPARK_ENFORCE_EAGER` | `0` | Set to `1` only to isolate CUDA-graph behavior |
 | `DEFAULT_THINKING` | `max` | Requests can override it in `chat_template_kwargs` |
 | `PREFIX_CACHE` | `1` | Reuse real repeated agent prefixes |
 | `DSPARK_ENABLE_ISSUE136_XGRAMMAR_HOTFIX` | `1` | Source-locked fix for speculative tokens after grammar termination |
@@ -168,6 +169,15 @@ The launch path protects the CUTE kernel compiler from empty Compose values.
 Blank `CUTE_DSL_ARCH`, memory-utilization, and model-length settings are
 normalized to non-empty defaults; Spark resolves to `sm_121a`. This avoids the
 empty-string enum lookup crash seen in the original recipe.
+
+For target-only diagnostics, `DSPARK_TOKENS=0` cleanly omits speculative
+decoding; it is not the recommended serving profile.
+
+Vision's K3 default also matches DeepSeek's published Vision-Exp vLLM launch.
+In the controlled fixed-output sweep, K3/K4/K5 measured 44.6/42.5/39.3 tok/s;
+the fourth proposal's cumulative prefix acceptance fell to about 12--13%.
+The [numerics analysis](NUMERICS_FOR_VISION_UPDATES.md) includes the phase-lock,
+single-row indexer, and equal-width cycle-cost controls behind that choice.
 
 ## Performance
 
@@ -241,7 +251,7 @@ including a held text prefix and generation resumed after the image response.
 Raw evidence and detailed interpretation:
 
 - [Vision K2 speed](results/benchmark-vision-k2-k3-tp1-20260903-final.json), [content](results/content-types-vision-k2-k3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-vision-k2-k3-tp1-20260903-final.json), [XGrammar canary](results/issue136-vision-k2-k3-tp1-20260903-final.json), and [image smoke](results/vision-smoke-vision-k2-k3-tp1-20260903-final.json)
-- [Vision K2.2-D2 speed](results/benchmark-vision-k22-d2-v1-k3-tp1-20260903-final.json), [content](results/content-types-vision-k22-d2-v1-k3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-vision-k22-d2-v1-k3-tp1-20260903-final.json), [XGrammar canary](results/issue136-vision-k22-d2-v1-k3-tp1-20260903-final.json), and [image smoke](results/vision-smoke-vision-k22-d2-v1-k3-tp1-20260903-final.json)
+- [Vision K2.2-D2 speed](results/benchmark-vision-k22-d2-v1-k3-tp1-20260903-final.json), [content](results/content-types-vision-k22-d2-v1-k3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-vision-k22-d2-v1-k3-tp1-20260903-final.json), [parallel-4 Tool Eval control](results/tool-eval-vision-k22-d2-v1-k3-tp1-p4-20260903.json), [XGrammar canary](results/issue136-vision-k22-d2-v1-k3-tp1-20260903-final.json), and [image smoke](results/vision-smoke-vision-k22-d2-v1-k3-tp1-20260903-final.json)
 - [0731 K2-v1 speed](results/benchmark-old-k2-v1-tp1-20260903-final-rc.json), [content](results/content-types-old-k2-v1-tp1-20260903-final-rc.json), [Tool Eval](results/tool-eval-old-k2-v1-tp1-20260903-final-rc.json), and [XGrammar canary](results/issue136-old-k2-v1-tp1-20260903-final-rc.json)
 - [0731 K2.1-D2.2 speed](results/benchmark-old-k21-d22-v3-tp1-20260903-final.json), [content](results/content-types-old-k21-d22-v3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-old-k21-d22-v3-tp1-20260903-final.json), and [XGrammar canary](results/issue136-old-k21-d22-v3-tp1-20260903-final.json)
 - [Detailed four-model comparison](20260903-mia-all-four-compare.md), [first Vision release comparison](20260903-mia-vision-k2-compare.md), and [numerics analysis](NUMERICS_FOR_VISION_UPDATES.md)
