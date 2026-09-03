@@ -1,0 +1,139 @@
+{
+  "base_url": "http://dodo:8888/v1",
+  "failures": [],
+  "finished_at": "2026-09-03T11:22:45.912088+00:00",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "ok": true,
+  "phases": {
+    "ladder": {
+      "cases": [
+        {
+          "build_s": 0.012103856075555086,
+          "elapsed_s": 0.6197360348887742,
+          "ok": true,
+          "output_tok_s": 42.03590028283155,
+          "output_tokens": 7,
+          "prefill_tok_s": 615.6063382269974,
+          "preview": "LADDER_OK 256",
+          "prompt_tokens": 279,
+          "target_prompt_tokens": 256,
+          "ttft_s": 0.45321170799434185
+        }
+      ],
+      "ok": true
+    },
+    "readiness": {
+      "main_max_model_len": 1000000,
+      "main_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+      "ok": true,
+      "text_smoke": {
+        "elapsed_s": 0.24680840410292149,
+        "ok": true,
+        "output_tok_s": 24.55433420300073,
+        "output_tokens": 2,
+        "prefill_tok_s": 54.42789391848215,
+        "preview": "OK",
+        "prompt_tokens": 9,
+        "ttft_s": 0.16535638901405036
+      },
+      "vision_smoke": {
+        "elapsed_s": 0.4668055521324277,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "Red",
+        "prompt_tokens": 132
+      },
+      "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1"
+    },
+    "soak": {
+      "ok": true,
+      "rounds": [
+        {
+          "median_output_tok_s": 46.889486001714914,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.6059009509626776,
+              "ok": true,
+              "output_tok_s": 46.889486001714914,
+              "output_tokens": 8,
+              "prefill_tok_s": 638.6590770262655,
+              "preview": "SOAK_OK 1-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.4352870099246502
+            }
+          ],
+          "round": 1
+        },
+        {
+          "median_output_tok_s": 46.92491502469594,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.6141322809271514,
+              "ok": true,
+              "output_tok_s": 46.92491502469594,
+              "output_tokens": 8,
+              "prefill_tok_s": 626.6241003415327,
+              "preview": "SOAK_OK 2-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.4436471560038626
+            }
+          ],
+          "round": 2
+        },
+        {
+          "median_output_tok_s": 48.14974806748723,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.6065073211211711,
+              "ok": true,
+              "output_tok_s": 48.14974806748723,
+              "output_tokens": 8,
+              "prefill_tok_s": 631.3031017241823,
+              "preview": "SOAK_OK 3-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.4403589959256351
+            }
+          ],
+          "round": 3
+        }
+      ]
+    },
+    "vision_mid": {
+      "hold": {
+        "elapsed_s": 0.6032629390247166,
+        "ok": true,
+        "output_tok_s": 29.33967816982036,
+        "output_tokens": 5,
+        "prefill_tok_s": 633.0206852319417,
+        "preview": "PREFIX_HELD",
+        "prompt_tokens": 274,
+        "ttft_s": 0.43284525512717664
+      },
+      "ok": true,
+      "resume": {
+        "elapsed_s": 0.6109572330024093,
+        "ok": true,
+        "output_tok_s": 35.78037293365541,
+        "output_tokens": 6,
+        "prefill_tok_s": 618.136857644363,
+        "preview": "AFTER_VISION_OK",
+        "prompt_tokens": 274,
+        "ttft_s": 0.4432675330899656
+      },
+      "vision": {
+        "elapsed_s": 0.47749870899133384,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "Red",
+        "prompt_tokens": 133
+      }
+    }
+  },
+  "started_at": "2026-09-03T11:22:40.979371+00:00",
+  "updated_at": "2026-09-03T11:22:45.912106+00:00",
+  "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "vl_url": "http://dodo:8888/v1"
+}

@@ -1,0 +1,35 @@
+{
+  "base_url": "http://kiwi:8888/v1",
+  "cases": [
+    {
+      "aggregate_tok_s": 45.8956322678554,
+      "concurrency": 1,
+      "elapsed_s": 11.177534215152264,
+      "max_tokens": 768,
+      "median_output_tok_s": 48.38647236430768,
+      "median_prefill_tok_s": 504.401984868329,
+      "median_ttft_s": 0.5749382609501481,
+      "requests": [
+        {
+          "elapsed_s": 11.177075075916946,
+          "finish_reason": "stop",
+          "output_tok_s": 48.38647236430768,
+          "output_tokens": 513,
+          "prefill_tok_s": 504.401984868329,
+          "prompt_tokens": 290,
+          "truncated": false,
+          "ttft_s": 0.5749382609501481
+        }
+      ],
+      "target_prompt_tokens": 256,
+      "thinking": "off",
+      "thinking_token_budget": null,
+      "truncated_requests": 0
+    }
+  ],
+  "max_tokens": 768,
+  "model": "deepseek-v4-flash-0731-exl3-k2.1-d2.2-calibrated-v3",
+  "run_id": "old-mixed-tile-ab-20260903",
+  "thinking": "off",
+  "thinking_token_budget": null
+}

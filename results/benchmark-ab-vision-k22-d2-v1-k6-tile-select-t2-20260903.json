@@ -1,0 +1,35 @@
+{
+  "base_url": "http://dodo:8888/v1",
+  "cases": [
+    {
+      "aggregate_tok_s": 31.742933764560725,
+      "concurrency": 1,
+      "elapsed_s": 17.578715443843976,
+      "max_tokens": 768,
+      "median_output_tok_s": 32.518717083800766,
+      "median_prefill_tok_s": 701.8308662673086,
+      "median_ttft_s": 0.4189043459482491,
+      "requests": [
+        {
+          "elapsed_s": 17.578252870123833,
+          "finish_reason": "stop",
+          "output_tok_s": 32.518717083800766,
+          "output_tokens": 558,
+          "prefill_tok_s": 701.8308662673086,
+          "prompt_tokens": 294,
+          "truncated": false,
+          "ttft_s": 0.4189043459482491
+        }
+      ],
+      "target_prompt_tokens": 256,
+      "thinking": "off",
+      "thinking_token_budget": null,
+      "truncated_requests": 0
+    }
+  ],
+  "max_tokens": 768,
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "run_id": "vision-mixed-k6-tile-ab-t2-20260903",
+  "thinking": "off",
+  "thinking_token_budget": null
+}

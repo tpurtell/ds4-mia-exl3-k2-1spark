@@ -146,6 +146,10 @@ python3 tests/test_dspark_stacked_mapping.py -q
 ok "test_dspark_stacked_mapping"
 python3 tests/test_issue133_triton_specialization.py -q
 ok "test_issue133_triton_specialization"
+python3 tests/test_vision_k2_recipe.py -q
+ok "test_vision_k2_recipe"
+python3 tests/test_projection_mixed_recipe.py -q
+ok "test_projection_mixed_recipe"
 python3 scripts/verify-dsv4-027-equality-gate.py
 ok "verify-dsv4-027-equality-gate"
 bash scripts/verify-overlay-sources.sh

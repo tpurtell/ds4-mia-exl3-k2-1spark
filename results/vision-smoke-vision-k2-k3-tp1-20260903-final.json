@@ -1,0 +1,139 @@
+{
+  "base_url": "http://ostrich:8888/v1",
+  "failures": [],
+  "finished_at": "2026-09-03T11:32:52.245826+00:00",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2-v1",
+  "ok": true,
+  "phases": {
+    "ladder": {
+      "cases": [
+        {
+          "build_s": 0.009555560071021318,
+          "elapsed_s": 0.5841690530069172,
+          "ok": true,
+          "output_tok_s": 43.41107075029188,
+          "output_tokens": 7,
+          "prefill_tok_s": 659.6994477498897,
+          "preview": "LADDER_OK 256",
+          "prompt_tokens": 279,
+          "target_prompt_tokens": 256,
+          "ttft_s": 0.4229198629036546
+        }
+      ],
+      "ok": true
+    },
+    "readiness": {
+      "main_max_model_len": 1000000,
+      "main_model": "deepseek-v4-flash-vision-exp-exl3-k2-v1",
+      "ok": true,
+      "text_smoke": {
+        "elapsed_s": 0.2092551258392632,
+        "ok": true,
+        "output_tok_s": 25.172731874531642,
+        "output_tokens": 2,
+        "prefill_tok_s": 69.33526547762307,
+        "preview": "OK",
+        "prompt_tokens": 9,
+        "ttft_s": 0.12980407499708235
+      },
+      "vision_smoke": {
+        "elapsed_s": 0.764575227163732,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "red",
+        "prompt_tokens": 132
+      },
+      "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2-v1"
+    },
+    "soak": {
+      "ok": true,
+      "rounds": [
+        {
+          "median_output_tok_s": 48.06965831143983,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.583130749175325,
+              "ok": true,
+              "output_tok_s": 48.06965831143983,
+              "output_tokens": 8,
+              "prefill_tok_s": 667.1376608154013,
+              "preview": "SOAK_OK 1-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.41670560115016997
+            }
+          ],
+          "round": 1
+        },
+        {
+          "median_output_tok_s": 48.36654566755029,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.5963193711359054,
+              "ok": true,
+              "output_tok_s": 48.36654566755029,
+              "output_tokens": 8,
+              "prefill_tok_s": 645.1376540636242,
+              "preview": "SOAK_OK 2-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.43091578711755574
+            }
+          ],
+          "round": 2
+        },
+        {
+          "median_output_tok_s": 47.88598720096766,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.5986842860002071,
+              "ok": true,
+              "output_tok_s": 47.88598720096766,
+              "output_tokens": 8,
+              "prefill_tok_s": 644.0838825210535,
+              "preview": "SOAK_OK 3-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.4316207990050316
+            }
+          ],
+          "round": 3
+        }
+      ]
+    },
+    "vision_mid": {
+      "hold": {
+        "elapsed_s": 0.5855042049661279,
+        "ok": true,
+        "output_tok_s": 29.849036089100725,
+        "output_tokens": 5,
+        "prefill_tok_s": 655.5108478521842,
+        "preview": "PREFIX_HELD",
+        "prompt_tokens": 274,
+        "ttft_s": 0.4179946081712842
+      },
+      "ok": true,
+      "resume": {
+        "elapsed_s": 0.595820568036288,
+        "ok": true,
+        "output_tok_s": 35.89032841569046,
+        "output_tokens": 6,
+        "prefill_tok_s": 639.2241800000601,
+        "preview": "AFTER_VISION_OK",
+        "prompt_tokens": 274,
+        "ttft_s": 0.4286446110345423
+      },
+      "vision": {
+        "elapsed_s": 0.4509132329840213,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "Red",
+        "prompt_tokens": 133
+      }
+    }
+  },
+  "started_at": "2026-09-03T11:32:47.207169+00:00",
+  "updated_at": "2026-09-03T11:32:52.245843+00:00",
+  "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2-v1",
+  "vl_url": "http://ostrich:8888/v1"
+}

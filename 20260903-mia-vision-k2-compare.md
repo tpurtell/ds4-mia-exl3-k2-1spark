@@ -8,8 +8,10 @@ Runtime image: `ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:9bd058d1b91fc8d91
 The Vision-Exp K2 checkpoint is a viable one-Spark vLLM target in this recipe.
 It cold-boots, serves text and real image input, survives structured-output and
 tool traffic without a restart, and has prompt-ingestion performance in the
-same band as the existing 0731 K2-v1 default. The default remains 0731 K2-v1;
-Vision is an explicit `vision-k2` selector.
+same band as the existing 0731 K2-v1 model. This report records the first
+Vision publication, when 0731 K2-v1 was still the default and Vision used K6.
+The follow-up projection-mixed release makes uniform Vision K2 the default
+and qualifies it at K3; its newer four-model results are reported separately.
 
 The clearest performance findings are:
 
@@ -29,7 +31,7 @@ The clearest performance findings are:
 
 | Label | Checkpoint | Revision | Spark |
 | --- | --- | --- | --- |
-| Vision-Exp K2 v1 | [wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1) | `419697c409cb4157471bcaf68be07dbd151b0a40` | ostrich |
+| Vision-Exp K2 v1 | [wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1) | `c171bea574201ff25530256fbd63626c7fd20f3c` | ostrich |
 | 0731 K2-v1 | [wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1) | `68eaca43e99bfbfd697a5559c7796b983deb38f8` | emu |
 
 Both used Mia/Anemll's digest-pinned vLLM 0.25.2 runtime, the merged Mia fixes
@@ -39,6 +41,11 @@ same one-Spark `uni` executor. The common service profile was a 1,000,000-token
 ceiling, six active sequences, an 8,192-token batch budget, and 0.85 memory
 utilization. 0731 proposed five dSpark tokens. Vision proposed six because its
 three next-token-prediction layers require a proposal count divisible by three.
+
+These K6 figures remain historical evidence for the first published Vision
+image, not the current launch default. A controlled follow-up found K3 18.7%
+faster than K6 on Vision K2.2-D2, so the current Vision profiles use one
+three-token parallel proposal and a 24-token CUDA-graph capture ceiling.
 
 ## What Vision support required
 
@@ -51,7 +58,7 @@ model/runtime boundary:
 2. Vision-Exp's official encoder and multimodal processor are installed before
    vLLM starts. The recipe accepts OpenAI `image_url` parts on user messages,
    applies the upstream role and image-cache fixes, and supplies the official
-   encoding module when the quant repository does not contain it.
+   encoding module from the quant repository's own `encoding/` directory.
 3. B12X's prepared Trellis storage contract is FP16. The adapter now plans and
    prepares with that exact dtype and uses bounded 512/2,560/8,192 prefill
    capacity buckets. The earlier one-size 8,192 plan made 2K prompt ingestion

@@ -114,6 +114,7 @@ def vision_chat(vl_url: str, model: str, image_b64: str, prompt: str, timeout: f
         ],
         "max_tokens": 64,
         "temperature": 0.0,
+        "chat_template_kwargs": {"thinking": False},
     }
     started = time.perf_counter()
     data = request_json(f"{vl_url}/chat/completions", body, timeout=timeout)

@@ -9,7 +9,7 @@ FROM ${EXL3_SOURCE_IMAGE} AS exl3_source
 FROM ${MIA_BASE_IMAGE}
 
 ARG B12X_REPOSITORY=https://github.com/tpurtell/sparkinfer-glmrt.git
-ARG B12X_COMMIT=3fc8d1491d1313c0ca64b2b95772972b7f42ee9d
+ARG B12X_COMMIT=e0f439532ce3e72c193803c128ba57e46dfd8ea2
 
 SHELL ["/bin/bash", "-c"]
 

@@ -4,8 +4,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 VISION_REPO = "wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1"
-VISION_REVISION = "419697c409cb4157471bcaf68be07dbd151b0a40"
-B12X_REVISION = "3fc8d1491d1313c0ca64b2b95772972b7f42ee9d"
+VISION_REVISION = "c171bea574201ff25530256fbd63626c7fd20f3c"
+B12X_REVISION = "e0f439532ce3e72c193803c128ba57e46dfd8ea2"
 
 
 class VisionK2RecipeTest(unittest.TestCase):
@@ -23,6 +23,9 @@ class VisionK2RecipeTest(unittest.TestCase):
             'trellis_codebook=self.quant_config.codebook,', adapter
         )
         self.assertIn('trellis_rate_granularity=\\"uniform\\"', adapter)
+        # Uniform trellis_t256 has an FP16 prepared-weight contract. The
+        # projection-mixed trellis_t256_proj path instead follows the live
+        # vLLM activation dtype (BF16 for DeepSeek V4).
         self.assertEqual(adapter.count("params_dtype=torch.float16"), 2)
         self.assertIn(
             "plan Trellis prepared weights with the B12X FP16 storage contract",
@@ -45,7 +48,7 @@ class VisionK2RecipeTest(unittest.TestCase):
         self.assertIn("vision-k2|vision)", entrypoint)
         self.assertIn(VISION_REPO, entrypoint)
         self.assertIn(VISION_REVISION, entrypoint)
-        self.assertIn("default_dspark_tokens=6", entrypoint)
+        self.assertIn("default_dspark_tokens=3", entrypoint)
         self.assertIn("dspark_tokens % 3", entrypoint)
 
     def test_vision_runtime_is_fail_closed_and_registers_multimodal_limit(
@@ -70,11 +73,20 @@ class VisionK2RecipeTest(unittest.TestCase):
             "Vision-Exp encoding/encoding_dsv4.py is missing", entrypoint
         )
 
-    def test_default_remains_calibrated_0731_k2_v1(self) -> None:
+    def test_image_smoke_requests_visible_non_thinking_output(self) -> None:
+        smoke = (ROOT / "scripts" / "stability-quick.py").read_text()
+        self.assertIn('"chat_template_kwargs": {"thinking": False}', smoke)
+
+    def test_default_is_tool_eval_winning_vision_k22(self) -> None:
         compose = (ROOT / "compose.yaml").read_text()
         env_example = (ROOT / ".env.example").read_text()
-        self.assertIn("MODEL_KIND: ${MODEL_KIND:-k2}", compose)
-        self.assertIn("MODEL_KIND=k2", env_example)
+        launcher = (ROOT / "launch.sh").read_text()
+        entrypoint = (ROOT / "scripts" / "k2-entrypoint.sh").read_text()
+        self.assertIn("MODEL_KIND: ${MODEL_KIND:-vision-k22}", compose)
+        self.assertIn("MODEL_KIND=vision-k22", env_example)
+        self.assertIn("model_kind=${MODEL_KIND:-vision-k22}", launcher)
+        self.assertIn("model_kind=${MODEL_KIND:-vision-k22}", entrypoint)
+        self.assertIn("default_dspark_tokens=3", entrypoint)
         self.assertNotIn("DSPARK_TOKENS=5", env_example)
 
     def test_qualified_xgrammar_fix_is_enabled_by_default(self) -> None:

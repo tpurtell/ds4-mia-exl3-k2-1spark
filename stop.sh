@@ -16,12 +16,16 @@ remote() {
   fi
 }
 
-for name in \
-  "${container_prefix}-k2-tp1" \
-  "${container_prefix}-k2-tp2-head" "${container_prefix}-native-tp2-head"; do
-  remote "${head_host}" docker rm -f "${name}" >/dev/null 2>&1 || true
-done
-for name in "${container_prefix}-k2-tp2-worker" "${container_prefix}-native-tp2-worker"; do
-  remote "${worker_host}" docker rm -f "${name}" >/dev/null 2>&1 || true
+model_kinds=(
+  k2 k2-v0 k2-v1
+  vision-k2 vision vision-k22 vision-k2.2 vision-k22-d2
+  k21-d22 k2.1-d2.2 k21 k21-v1 k21-v2 native
+)
+for model_kind in "${model_kinds[@]}"; do
+  remote "${head_host}" docker rm -f \
+    "${container_prefix}-${model_kind}-tp1" \
+    "${container_prefix}-${model_kind}-tp2-head" >/dev/null 2>&1 || true
+  remote "${worker_host}" docker rm -f \
+    "${container_prefix}-${model_kind}-tp2-worker" >/dev/null 2>&1 || true
 done
 echo "Stopped ds4-mia containers."

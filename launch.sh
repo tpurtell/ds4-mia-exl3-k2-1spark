@@ -11,13 +11,13 @@ if [[ -f "${env_file}" ]]; then
 fi
 
 nodes=1
-model_kind=${MODEL_KIND:-k2}
+model_kind=${MODEL_KIND:-vision-k22}
 while (( $# )); do
   case "$1" in
     --nodes) nodes=$2; shift 2 ;;
     --model) model_kind=$2; shift 2 ;;
     -h|--help)
-      echo "usage: $0 [--nodes 1|2] [--model k2|k2-v0|k2-v1|vision-k2|k21|k21-v1|k21-v2|native]"
+      echo "usage: $0 [--nodes 1|2] [--model k2|k2-v0|k2-v1|vision-k2|vision-k22|k21-d22|k21|k21-v1|k21-v2|native]"
       exit 0
       ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -25,7 +25,7 @@ while (( $# )); do
 done
 case "${nodes}" in 1|2) ;; *) echo "--nodes must be 1 or 2" >&2; exit 2 ;; esac
 case "${model_kind}" in
-  k2|k2-v0|k2-v1|vision-k2|vision|k21|k21-v1|k21-v2|native) ;;
+  k2|k2-v0|k2-v1|vision-k2|vision|vision-k22|vision-k2.2|vision-k22-d2|k21-d22|k2.1-d2.2|k21|k21-v1|k21-v2|native) ;;
   *) echo "unsupported --model '${model_kind}'" >&2; exit 2 ;;
 esac
 if (( nodes == 1 )) && [[ "${model_kind}" == native ]]; then
@@ -98,7 +98,7 @@ common_args=(
   -e MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
   -e LONG_PREFILL_TOKEN_THRESHOLD="${LONG_PREFILL_TOKEN_THRESHOLD:-1024}"
   -e MAX_CUDAGRAPH_CAPTURE_SIZE="${MAX_CUDAGRAPH_CAPTURE_SIZE:-}"
-  -e GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.85}"
+  -e GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-}"
   -e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-nvfp4_ds_mla}"
   -e PREFIX_CACHE="${PREFIX_CACHE:-1}"
   -e DSPARK_TOKENS="${DSPARK_TOKENS:-}"

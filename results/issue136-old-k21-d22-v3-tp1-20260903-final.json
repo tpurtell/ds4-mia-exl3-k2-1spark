@@ -1,0 +1,1190 @@
+{
+  "authenticated": false,
+  "base_url": "http://kiwi:8888/v1",
+  "completed_cases": 145,
+  "concurrency": 4,
+  "expected_cases": 145,
+  "failed_cases": 0,
+  "final_health": {
+    "elapsed_ms": 5,
+    "error": null,
+    "http_status": 200,
+    "ok": true
+  },
+  "finished_at": "2026-09-03T11:16:12.125976+00:00",
+  "initial_health": {
+    "elapsed_ms": 11,
+    "error": null,
+    "http_status": 200,
+    "ok": true
+  },
+  "issue": 136,
+  "model": "deepseek-v4-flash-0731-exl3-k2.1-d2.2-calibrated-v3",
+  "redaction": "credentials, request bodies, response bodies, and headers omitted",
+  "request_timeout_seconds": 120,
+  "results": [
+    {
+      "elapsed_ms": 2720,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-000-X",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2660,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-001-XXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2365,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-002-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2469,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-003-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 6767,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-004-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2668,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-005-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2775,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-006-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2970,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-007-XXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2265,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-008-XXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2376,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-009-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2566,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-010-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2661,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-011-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2568,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-012-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2887,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-013-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2573,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-014-XXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2375,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-015-XXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2671,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-016-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2578,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-017-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2681,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-018-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2667,
+      "error": null,
+      "http_status": 200,
+      "label": "sequential-019-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-sequential",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4240,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-000-X",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3518,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-001-XXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4238,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-002-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3376,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-003-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4315,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-004-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4174,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-005-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4427,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-006-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4298,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-007-XXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4012,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-008-XXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3867,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-009-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4807,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-010-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5174,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-011-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4799,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-012-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4797,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-013-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4214,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-014-XXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4165,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-015-XXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4767,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-016-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4764,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-017-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5095,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-018-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4167,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-019-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4772,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-020-XX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4200,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-021-XXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3951,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-022-XXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4381,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-023-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4628,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-024-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4693,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-025-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4992,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-026-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4932,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-027-XXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4161,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-028-XXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4618,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-029-XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4772,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-030-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4740,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-031-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4979,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-032-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4693,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-033-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4165,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-034-XXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4686,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-035-XXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4370,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-036-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4769,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-037-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4618,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-038-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4527,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-039-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4451,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-040-XXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3857,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-041-XXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3519,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-042-XXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4427,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-043-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4645,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-044-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4987,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-045-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4825,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-046-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5214,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-047-XXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4269,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-048-XXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5279,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-049-XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4433,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-050-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4845,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-051-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4820,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-052-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4673,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-053-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4148,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-054-XXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4401,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-055-XXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4566,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-056-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4569,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-057-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4919,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-058-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4982,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-059-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4668,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-060-XXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4810,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-061-XXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4168,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-062-XXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4664,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-063-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4633,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-064-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4770,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-065-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4624,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-066-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4339,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-067-XXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3920,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-068-XXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4309,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-069-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4309,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-070-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4248,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-071-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4433,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-072-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3912,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-073-X",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4354,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-074-XXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4407,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-075-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4516,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-076-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4649,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-077-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4207,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-078-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4442,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-079-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5303,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-080-XXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3824,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-081-XXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4953,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-082-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4754,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-083-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4892,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-084-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4719,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-085-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4971,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-086-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 5024,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-087-XXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4293,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-088-XXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4765,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-089-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4862,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-090-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4799,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-091-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4267,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-092-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4484,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-093-XX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4635,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-094-XXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4559,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-095-XXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4857,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-096-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4434,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-097-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 4190,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-098-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-required",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 3371,
+      "error": null,
+      "http_status": 200,
+      "label": "concurrent-099-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-concurrency4-named",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1322,
+      "error": null,
+      "http_status": 200,
+      "label": "ignore-eos-000-X",
+      "lane": "strict-json-ignore-eos",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1428,
+      "error": null,
+      "http_status": 200,
+      "label": "ignore-eos-001-XXXXXXXXXXXX",
+      "lane": "strict-json-ignore-eos",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1224,
+      "error": null,
+      "http_status": 200,
+      "label": "ignore-eos-002-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-json-ignore-eos",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1434,
+      "error": null,
+      "http_status": 200,
+      "label": "ignore-eos-003-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-json-ignore-eos",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1321,
+      "error": null,
+      "http_status": 200,
+      "label": "ignore-eos-004-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "strict-json-ignore-eos",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2577,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-000-X",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2375,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-001-XXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2675,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-002-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2167,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-003-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2585,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-004-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2759,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-005-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2780,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-006-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2864,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-007-XXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2577,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-008-XXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 2790,
+      "error": null,
+      "http_status": 200,
+      "label": "ordinary-tool-009-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "ordinary-tool-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 307,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-000-X",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 328,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-001-XXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 362,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-002-XXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 357,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-003-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 347,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-004-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 353,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-005-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 350,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-006-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 327,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-007-XXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 1309,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-008-XXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    },
+    {
+      "elapsed_ms": 360,
+      "error": null,
+      "http_status": 200,
+      "label": "plain-chat-009-XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "lane": "plain-chat-control",
+      "ok": true
+    }
+  ],
+  "schema_version": 1,
+  "started_at": "2026-09-03T11:12:44.159892+00:00",
+  "status": "PASS"
+}

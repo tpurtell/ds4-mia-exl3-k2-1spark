@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-model_kind=${MODEL_KIND:-k2}
+model_kind=${MODEL_KIND:-vision-k22}
 vision_model=0
+vision_projection_mixed=0
 case "${model_kind}" in
   k2|k2-v1)
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1}
@@ -16,9 +17,21 @@ case "${model_kind}" in
     ;;
   vision-k2|vision)
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1}
-    model_revision=${MODEL_REVISION:-419697c409cb4157471bcaf68be07dbd151b0a40}
+    model_revision=${MODEL_REVISION:-c171bea574201ff25530256fbd63626c7fd20f3c}
     served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2-v1}
     vision_model=1
+    ;;
+  vision-k22|vision-k2.2|vision-k22-d2)
+    model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1}
+    model_revision=${MODEL_REVISION:-8347bfb8776287ef2dcab2b46e9f15c655825c3a}
+    served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1}
+    vision_model=1
+    vision_projection_mixed=1
+    ;;
+  k21-d22|k2.1-d2.2)
+    model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3}
+    model_revision=${MODEL_REVISION:-7827301eed170e2a5e394f45a13cc66561c601ed}
+    served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-exl3-k2.1-d2.2-calibrated-v3}
     ;;
   k21|k21-v2)
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v2}
@@ -36,23 +49,37 @@ case "${model_kind}" in
     served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-native}
     ;;
   *)
-    echo "MODEL_KIND must be k2, k2-v0, k2-v1, vision-k2, k21, k21-v1, k21-v2, or native; got '${model_kind}'" >&2
+    echo "MODEL_KIND must be k2, k2-v0, k2-v1, vision-k2, vision-k22, k21-d22, k21, k21-v1, k21-v2, or native; got '${model_kind}'" >&2
     exit 2
     ;;
 esac
 
 if (( vision_model )); then
-  default_dspark_tokens=6
+  default_dspark_tokens=3
+  minimum_dspark_tokens=3
 else
   default_dspark_tokens=5
+  minimum_dspark_tokens=5
+fi
+
+if (( vision_projection_mixed )); then
+  default_gpu_memory_utilization=0.86
+else
+  default_gpu_memory_utilization=0.85
+fi
+gpu_memory_utilization=${GPU_MEMORY_UTILIZATION:-${default_gpu_memory_utilization}}
+if ! python3 -c 'import sys; value=float(sys.argv[1]); assert 0 < value <= 1' \
+  "${gpu_memory_utilization}" 2>/dev/null; then
+  echo "GPU_MEMORY_UTILIZATION must be a number in (0,1]; got '${gpu_memory_utilization}'" >&2
+  exit 2
 fi
 dspark_tokens=${DSPARK_TOKENS:-${default_dspark_tokens}}
 if [[ ! "${dspark_tokens}" =~ ^[0-9]+$ ]]; then
   echo "DSPARK_TOKENS must be a non-negative integer; got '${dspark_tokens}'" >&2
   exit 2
 fi
-if (( dspark_tokens < 5 )); then
-  echo "DSPARK_TOKENS must be at least the checkpoint dspark_block_size (5); got '${dspark_tokens}'" >&2
+if (( dspark_tokens < minimum_dspark_tokens )); then
+  echo "DSPARK_TOKENS must be at least ${minimum_dspark_tokens} for this checkpoint; got '${dspark_tokens}'" >&2
   exit 2
 fi
 if (( vision_model && dspark_tokens % 3 != 0 )); then
@@ -192,7 +219,7 @@ if (( vision_model )); then
     [[ -f "${candidate}" ]] && encoding_source=${candidate}
   fi
   if [[ -z "${encoding_source}" ]]; then
-    echo "Vision-Exp encoding/encoding_dsv4.py is missing; cache the official Vision-Exp metadata or set DSPARK_ENCODING_FILE" >&2
+    echo "Vision-Exp encoding/encoding_dsv4.py is missing from the model snapshot; set DSPARK_ENCODING_FILE only for a custom checkpoint" >&2
     exit 2
   fi
   cp "${encoding_source}" /usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4_encoding.py
@@ -289,7 +316,7 @@ exec /usr/local/bin/vllm serve "${model_ref}" \
   --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
   --long-prefill-token-threshold "${LONG_PREFILL_TOKEN_THRESHOLD:-1024}" \
   --max-cudagraph-capture-size "${max_cudagraph_capture_size}" \
-  --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
+  --gpu-memory-utilization "${gpu_memory_utilization}" \
   --load-format "${LOAD_FORMAT:-instanttensor}" \
   "${prefix_args[@]}" \
   --enable-prompt-tokens-details \
