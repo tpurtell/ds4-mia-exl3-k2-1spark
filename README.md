@@ -297,18 +297,26 @@ docker build --progress=plain \
   -t ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:latest .
 ```
 
-The published 2026-08-24 image is also tagged `2026-08-24-k21`:
+The Vision K2 release is tagged `2026-09-03-vision-k2`, `7c7306f`, and
+`latest`:
+
+```text
+ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:9bd058d1b91fc8d9164b0cf45ed8355fdbd5a05a3715ec38c0d5a67163dd1b60
+```
+
+The historical 2026-08-24 image is also tagged `2026-08-24-k21`:
 
 ```text
 ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:40c9fa96b23184c260ebf1213c747afe54b5ad0a8b8686292aca209397507548
 ```
 
 - Mia base image: `ghcr.io/anemll/dspark-vllm-gx10@sha256:a83948492cf13df455170fb42885f5ef4db54fefe0feff0f841ecbff464ac9d8`
-- b12x serving fork: `28e083482fd18ca3ce0e2553cd533102be85552f`
+- b12x serving fork: `3fc8d1491d1313c0ca64b2b95772972b7f42ee9d`
 - K2-v0 model revision: `dff9afc6f5fe50a890590f7b6d5339ceaf5ba51e`
 - K2-v1 model revision: `68eaca43e99bfbfd697a5559c7796b983deb38f8`
 - K2.1-v1 config revision: `73757f619a951d812fe8008a39dbade8df20e6c6`
 - K2.1-v2 config revision: `a2b066719ebdc0cbb0eacc752ffe7a2190c919aa`
+- Vision K2 model revision: `419697c409cb4157471bcaf68be07dbd151b0a40`
 
 Mia's original field notes remain in the
 [upstream recipe](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark).

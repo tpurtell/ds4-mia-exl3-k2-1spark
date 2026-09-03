@@ -1,6 +1,7 @@
 # Vision-Exp K2 v1 versus 0731 calibrated K2-v1 on one DGX Spark
 
 Date: 2026-09-03
+Runtime image: `ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:9bd058d1b91fc8d9164b0cf45ed8355fdbd5a05a3715ec38c0d5a67163dd1b60`
 
 ## Conclusions
 
