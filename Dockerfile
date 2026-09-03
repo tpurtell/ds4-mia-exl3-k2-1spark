@@ -9,7 +9,7 @@ FROM ${EXL3_SOURCE_IMAGE} AS exl3_source
 FROM ${MIA_BASE_IMAGE}
 
 ARG B12X_REPOSITORY=https://github.com/tpurtell/sparkinfer-glmrt.git
-ARG B12X_COMMIT=28e083482fd18ca3ce0e2553cd533102be85552f
+ARG B12X_COMMIT=3fc8d1491d1313c0ca64b2b95772972b7f42ee9d
 
 SHELL ["/bin/bash", "-c"]
 
@@ -108,17 +108,24 @@ RUN for patch in /tmp/mia-hotfixes/*.sh; do \
 # to the entrypoint and remain opt-in.
 COPY patches/hotfix-encoding-dsv4-issue21.py \
      patches/port-dsv4-reasoning-effort.py \
+     patches/hotfix-dsv4-config-hash-moe.py \
      patches/hotfix-vllm-safetensors-index.py \
      patches/hotfix-dsv4-issue55-tool-truncation.py \
      patches/hotfix-vllm-empty-encoder-output.py \
      patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py \
      patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py \
      patches/hotfix-dsv4-issue26-hybrid-swa-min.py \
+     patches/hotfix-dsv4-issue133-triton-specialization.py \
+     patches/hotfix-vllm-issue117-shm-ring-buffer.py \
+     patches/hotfix-vllm-issue136-xgrammar-termination.py \
+     patches/hotfix-dsv4-vision-exp.py \
      patches/hotfix-dsv4-suppress-stops-in-reasoning.py \
      patches/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py \
      patches/hotfix-dsv4-assistant-final-continuation.py \
      /opt/recipe/patches/
+COPY patches/vision_exp /opt/dspark-patches/vision_exp
 RUN python3 /opt/recipe/patches/port-dsv4-reasoning-effort.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-config-hash-moe.py && \
     python3 /opt/recipe/patches/hotfix-encoding-dsv4-issue21.py && \
     python3 /opt/recipe/patches/hotfix-vllm-safetensors-index.py \
       /usr/local/lib/python3.12/dist-packages/vllm && \
@@ -128,6 +135,8 @@ RUN python3 /opt/recipe/patches/port-dsv4-reasoning-effort.py && \
     python3 /opt/recipe/patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py && \
     python3 /opt/recipe/patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py && \
     python3 /opt/recipe/patches/hotfix-dsv4-issue26-hybrid-swa-min.py && \
+    python3 /opt/recipe/patches/hotfix-dsv4-issue133-triton-specialization.py && \
+    python3 /opt/recipe/patches/hotfix-vllm-issue117-shm-ring-buffer.py && \
     python3 /opt/recipe/patches/hotfix-dsv4-suppress-stops-in-reasoning.py
 
 RUN python3 - <<'PY'
@@ -165,7 +174,8 @@ COPY scripts /opt/recipe/scripts
 RUN chmod 0755 /opt/recipe/scripts/*.sh
 
 LABEL org.opencontainers.image.source="https://github.com/tpurtell/ds4-mia-exl3-k2-1spark" \
-      org.opencontainers.image.description="Mia DeepSeek V4 Flash DSpark runtime with EXL3 K2 and mixed K2/K3 support" \
+      org.opencontainers.image.description="Mia DeepSeek V4 Flash and Vision-Exp DSpark runtime with EXL3 support" \
+      org.opencontainers.image.b12x.revision="${B12X_COMMIT}" \
       org.opencontainers.image.licenses="MIT"
 
 EXPOSE 8888

@@ -15,7 +15,7 @@ grows with prompt length. (Issue #27.)
 
 Fix: at the top of the waiting-admission loop, break (don't admit a new
 prefill request) once the number of in-flight partial prefills has reached
-the cap. The cap is ``DSPARK_MAX_INFLIGHT_PREFILLS`` (1-3, default 2 via
+the cap. The cap is ``DSPARK_MAX_INFLIGHT_PREFILLS`` (1-3, default 1 via
 compose) because this image rejects ``--max-num-partial-prefills``. It is
 parsed once during ``Scheduler`` construction; unset, blank, nonpositive, or
 malformed values fall back to ``SchedulerConfig.max_num_partial_prefills``

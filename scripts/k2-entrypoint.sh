@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 model_kind=${MODEL_KIND:-k2}
+vision_model=0
 case "${model_kind}" in
   k2|k2-v1)
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1}
@@ -12,6 +13,12 @@ case "${model_kind}" in
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v0}
     model_revision=${MODEL_REVISION:-dff9afc6f5fe50a890590f7b6d5339ceaf5ba51e}
     served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-exl3-k2-calibrated-v0}
+    ;;
+  vision-k2|vision)
+    model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1}
+    model_revision=${MODEL_REVISION:-419697c409cb4157471bcaf68be07dbd151b0a40}
+    served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-vision-exp-exl3-k2-v1}
+    vision_model=1
     ;;
   k21|k21-v2)
     model_repo=${MODEL_REPO:-wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v2}
@@ -29,10 +36,29 @@ case "${model_kind}" in
     served_model_name=${SERVED_MODEL_NAME:-deepseek-v4-flash-0731-native}
     ;;
   *)
-    echo "MODEL_KIND must be k2, k2-v0, k2-v1, k21, k21-v1, k21-v2, or native; got '${model_kind}'" >&2
+    echo "MODEL_KIND must be k2, k2-v0, k2-v1, vision-k2, k21, k21-v1, k21-v2, or native; got '${model_kind}'" >&2
     exit 2
     ;;
 esac
+
+if (( vision_model )); then
+  default_dspark_tokens=6
+else
+  default_dspark_tokens=5
+fi
+dspark_tokens=${DSPARK_TOKENS:-${default_dspark_tokens}}
+if [[ ! "${dspark_tokens}" =~ ^[0-9]+$ ]]; then
+  echo "DSPARK_TOKENS must be a non-negative integer; got '${dspark_tokens}'" >&2
+  exit 2
+fi
+if (( dspark_tokens < 5 )); then
+  echo "DSPARK_TOKENS must be at least the checkpoint dspark_block_size (5); got '${dspark_tokens}'" >&2
+  exit 2
+fi
+if (( vision_model && dspark_tokens % 3 != 0 )); then
+  echo "Vision-Exp requires DSPARK_TOKENS divisible by 3; got '${dspark_tokens}'" >&2
+  exit 2
+fi
 
 model_ref=${MODEL_PATH:-${model_repo}}
 revision_args=()
@@ -104,7 +130,7 @@ case "${draft_sample_method}" in
 esac
 speculative_config=$(printf \
   '{"method":"dspark","num_speculative_tokens":%s,"draft_sample_method":"%s"}' \
-  "${DSPARK_TOKENS:-5}" "${draft_sample_method}")
+  "${dspark_tokens}" "${draft_sample_method}")
 
 api_key_args=()
 case "${DSPARK_API_KEYS:-}" in
@@ -143,6 +169,55 @@ case "${DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX:-0}" in
   1) python3 /opt/recipe/patches/hotfix-dsv4-assistant-final-continuation.py ;;
   *) echo "DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX must be 0 or 1" >&2; exit 2 ;;
 esac
+case "${DSPARK_ENABLE_ISSUE136_XGRAMMAR_HOTFIX:-1}" in
+  0) ;;
+  1) python3 /opt/recipe/patches/hotfix-vllm-issue136-xgrammar-termination.py ;;
+  *) echo "DSPARK_ENABLE_ISSUE136_XGRAMMAR_HOTFIX must be 0 or 1" >&2; exit 2 ;;
+esac
+
+limit_mm_args=()
+if (( vision_model )); then
+  encoding_source=${DSPARK_ENCODING_FILE:-}
+  if [[ -z "${encoding_source}" && -n "${MODEL_PATH:-}" ]]; then
+    candidate=${MODEL_PATH%/}/encoding/encoding_dsv4.py
+    [[ -f "${candidate}" ]] && encoding_source=${candidate}
+  fi
+  if [[ -z "${encoding_source}" ]]; then
+    model_hub_dir=${model_repo//\//--}
+    candidate="${HF_HOME:-/cache/huggingface}/hub/models--${model_hub_dir}/snapshots/${model_revision}/encoding/encoding_dsv4.py"
+    [[ -f "${candidate}" ]] && encoding_source=${candidate}
+  fi
+  if [[ -z "${encoding_source}" ]]; then
+    candidate="${HF_HOME:-/cache/huggingface}/hub/models--deepseek-ai--DeepSeek-V4-Flash-Vision-Exp/snapshots/86f746b36186f0e567729a5c06a8c918caba82a9/encoding/encoding_dsv4.py"
+    [[ -f "${candidate}" ]] && encoding_source=${candidate}
+  fi
+  if [[ -z "${encoding_source}" ]]; then
+    echo "Vision-Exp encoding/encoding_dsv4.py is missing; cache the official Vision-Exp metadata or set DSPARK_ENCODING_FILE" >&2
+    exit 2
+  fi
+  cp "${encoding_source}" /usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4_encoding.py
+  python3 /opt/recipe/patches/hotfix-encoding-dsv4-issue21.py
+  python3 /opt/recipe/patches/hotfix-dsv4-vision-exp.py \
+    /opt/dspark-patches/vision_exp
+
+  limit_mm_raw=${LIMIT_MM_PER_PROMPT:-image=8}
+  case "${limit_mm_raw}" in
+    image=*)
+      limit_mm_count=${limit_mm_raw#image=}
+      if [[ ! "${limit_mm_count}" =~ ^[0-9]+$ ]]; then
+        echo "LIMIT_MM_PER_PROMPT image=N requires a non-negative integer; got '${limit_mm_raw}'" >&2
+        exit 2
+      fi
+      limit_mm_json=$(printf '{"image":%s}' "${limit_mm_count}")
+      ;;
+    *) limit_mm_json=${limit_mm_raw} ;;
+  esac
+  python3 -c 'import json,sys; value=json.loads(sys.argv[1]); assert isinstance(value, dict) and all(isinstance(k, str) and isinstance(v, int) and v >= 0 for k, v in value.items())' "${limit_mm_json}" || {
+    echo "LIMIT_MM_PER_PROMPT must be JSON like {\"image\":8} or image=N" >&2
+    exit 2
+  }
+  limit_mm_args=(--limit-mm-per-prompt "${limit_mm_json}")
+fi
 
 export HF_HOME=${HF_HOME:-/cache/huggingface}
 export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
@@ -182,6 +257,23 @@ for optional_nccl_env in \
   fi
 done
 
+max_num_seqs=${MAX_NUM_SEQS:-6}
+if [[ ! "${max_num_seqs}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MAX_NUM_SEQS must be a positive integer; got '${max_num_seqs}'" >&2
+  exit 2
+fi
+max_cudagraph_capture_size=${MAX_CUDAGRAPH_CAPTURE_SIZE:-}
+if [[ -z "${max_cudagraph_capture_size}" ]]; then
+  max_cudagraph_capture_size=$((max_num_seqs * (dspark_tokens + 1)))
+  if (( vision_model )); then
+    max_cudagraph_capture_size=$(((max_cudagraph_capture_size + 7) / 8 * 8))
+  fi
+fi
+if [[ ! "${max_cudagraph_capture_size}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MAX_CUDAGRAPH_CAPTURE_SIZE must be a positive integer; got '${max_cudagraph_capture_size}'" >&2
+  exit 2
+fi
+
 exec /usr/local/bin/vllm serve "${model_ref}" \
   "${revision_args[@]}" \
   --served-model-name "${served_model_name}" \
@@ -193,10 +285,10 @@ exec /usr/local/bin/vllm serve "${model_ref}" \
   --kv-cache-dtype "${KV_CACHE_DTYPE:-nvfp4_ds_mla}" \
   --block-size 256 \
   --max-model-len "${MAX_MODEL_LEN:-1000000}" \
-  --max-num-seqs "${MAX_NUM_SEQS:-6}" \
+  --max-num-seqs "${max_num_seqs}" \
   --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
   --long-prefill-token-threshold "${LONG_PREFILL_TOKEN_THRESHOLD:-1024}" \
-  --max-cudagraph-capture-size "${MAX_CUDAGRAPH_CAPTURE_SIZE:-36}" \
+  --max-cudagraph-capture-size "${max_cudagraph_capture_size}" \
   --gpu-memory-utilization "${GPU_MEMORY_UTILIZATION:-0.85}" \
   --load-format "${LOAD_FORMAT:-instanttensor}" \
   "${prefix_args[@]}" \
@@ -205,6 +297,7 @@ exec /usr/local/bin/vllm serve "${model_ref}" \
   --enable-chunked-prefill \
   --speculative-config "${speculative_config}" \
   --tokenizer-mode deepseek_v4 \
+  "${limit_mm_args[@]}" \
   --distributed-executor-backend "${executor_backend}" \
   --moe-backend flashinfer_b12x \
   --tool-call-parser deepseek_v4 \

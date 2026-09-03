@@ -202,6 +202,205 @@ def main(root: Path) -> None:
         "    return True if return_success else None\n",
         "retain EXL3 expert weight context in loader errors",
     )
+    replace_once(
+        exl3,
+        "            trellis_bits=bits,\n"
+        "            trellis_tile_config=tile_config,\n"
+        "        )\n"
+        "        layer.exl3_trellis_weights = api.prepare_weights(\n",
+        "            trellis_bits=bits,\n"
+        "            trellis_tile_config=tile_config,\n"
+        "            trellis_codebook=self.quant_config.codebook,\n"
+        "            trellis_rate_granularity=\"uniform\",\n"
+        "        )\n"
+        "        layer.exl3_trellis_weights = api.prepare_weights(\n",
+        "pass validated Trellis format to current B12X",
+    )
+    replace_once(
+        exl3,
+        "            source_format=\"exl3_trellis_mcg\",\n"
+        "            activation=layer.activation.value,\n"
+        "            params_dtype=layer.exl3_params_dtype,\n",
+        "            source_format=\"exl3_trellis_mcg\",\n"
+        "            activation=layer.activation.value,\n"
+        "            # B12X keeps the prepared full-rotation payload in FP16 even\n"
+        "            # when live activations are BF16.  The execution binding\n"
+        "            # converts/returns the caller dtype independently.\n"
+        "            params_dtype=torch.float16,\n",
+        "plan Trellis prepared weights with the B12X FP16 storage contract",
+    )
+    replace_once(
+        exl3,
+        "        layer.exl3_trellis_weights = api.prepare_weights(\n"
+        "            plan=weight_plan,\n"
+        "            params_dtype=layer.exl3_params_dtype,\n",
+        "        layer.exl3_trellis_weights = api.prepare_weights(\n"
+        "            plan=weight_plan,\n"
+        "            params_dtype=torch.float16,\n",
+        "prepare Trellis weights with the B12X FP16 storage contract",
+    )
+    replace_once(
+        exl3,
+        "        max_batched_tokens = int(layer.exl3_max_num_batched_tokens)\n"
+        "        prefill_plan_enabled = prefill_trellis and max_batched_tokens > max_trellis_m\n"
+        "        max_parity_batch = min(max_batched_tokens, min_trellis_m - 1)\n",
+        "        max_batched_tokens = int(layer.exl3_max_num_batched_tokens)\n"
+        "        prefill_plan_enabled = prefill_trellis and max_batched_tokens > max_trellis_m\n"
+        "        raw_prefill_capacities = os.environ.get(\n"
+        "            \"VLLM_EXL3_PREFILL_PLAN_CAPACITIES\", \"512,2560\"\n"
+        "        )\n"
+        "        try:\n"
+        "            requested_prefill_capacities = tuple(\n"
+        "                int(value.strip())\n"
+        "                for value in raw_prefill_capacities.split(\",\")\n"
+        "                if value.strip()\n"
+        "            )\n"
+        "        except ValueError as exc:\n"
+        "            raise ValueError(\n"
+        "                \"VLLM_EXL3_PREFILL_PLAN_CAPACITIES must be a comma-separated \"\n"
+        "                \"list of positive integers\"\n"
+        "            ) from exc\n"
+        "        if any(capacity <= 0 for capacity in requested_prefill_capacities):\n"
+        "            raise ValueError(\n"
+        "                \"VLLM_EXL3_PREFILL_PLAN_CAPACITIES must contain only \"\n"
+        "                \"positive integers\"\n"
+        "            )\n"
+        "        prefill_plan_capacities = (\n"
+        "            tuple(\n"
+        "                sorted(\n"
+        "                    {\n"
+        "                        min(capacity, max_batched_tokens)\n"
+        "                        for capacity in requested_prefill_capacities\n"
+        "                        if capacity > max_trellis_m\n"
+        "                    }\n"
+        "                    | {max_batched_tokens}\n"
+        "                )\n"
+        "            )\n"
+        "            if prefill_plan_enabled\n"
+        "            else ()\n"
+        "        )\n"
+        "        max_parity_batch = min(max_batched_tokens, min_trellis_m - 1)\n",
+        "derive bounded Trellis prefill plan capacities",
+    )
+    replace_once(
+        exl3,
+        "            prefill_trellis,\n"
+        "            prefill_block_m,\n"
+        "            layer.exl3_trellis_tile_config,\n",
+        "            prefill_trellis,\n"
+        "            prefill_block_m,\n"
+        "            prefill_plan_capacities,\n"
+        "            layer.exl3_trellis_tile_config,\n",
+        "key Trellis runtime by prefill capacities",
+    )
+    replace_once(
+        exl3,
+        "        prefill_plan = None\n"
+        "        prefill_scratch = None\n"
+        "        if prefill_plan_enabled:\n"
+        "            prefill_plan, prefill_scratch = _plan_with_scratch(\n"
+        "                max_batched_tokens, prefill_block_m\n"
+        "            )\n",
+        "        prefill_states = []\n"
+        "        for capacity in prefill_plan_capacities:\n"
+        "            prefill_plan, prefill_scratch = _plan_with_scratch(\n"
+        "                capacity, prefill_block_m\n"
+        "            )\n"
+        "            prefill_states.append((capacity, prefill_plan, prefill_scratch))\n",
+        "plan size-bucketed Trellis prefill runtimes",
+    )
+    replace_once(
+        exl3,
+        '            "prefill_plan": prefill_plan,\n'
+        '            "prefill_scratch": prefill_scratch,\n',
+        '            "prefill_states": tuple(prefill_states),\n',
+        "store size-bucketed Trellis prefill runtimes",
+    )
+    replace_once(
+        exl3,
+        "        prefill_arena_mib = (\n"
+        "            0.0\n"
+        "            if prefill_scratch is None\n"
+        "            else prefill_scratch.numel() * prefill_scratch.element_size() / (1 << 20)\n"
+        "        )\n"
+        "        logger.info_once(\n"
+        "            \"EXL3 rank-sliced runtime planned: Trellis m=%d..%d block_m=%d, \"\n"
+        "            \"prefill %s capacity=%d chunk=%d topk=%d\",\n"
+        "            min_trellis_m,\n"
+        "            max_trellis_m,\n"
+        "            block_m,\n"
+        "            (\n"
+        "                f\"trellis block_m={prefill_block_m} arena={prefill_arena_mib:.1f}MiB\"\n"
+        "                if prefill_plan is not None\n"
+        "                else \"parity\"\n"
+        "            ),\n"
+        "            max_batched_tokens,\n"
+        "            chunk,\n"
+        "            topk,\n"
+        "        )\n",
+        "        prefill_arena_mib = sum(\n"
+        "            scratch.numel() * scratch.element_size()\n"
+        "            for _, _, scratch in prefill_states\n"
+        "        ) / (1 << 20)\n"
+        "        logger.info_once(\n"
+        "            \"EXL3 rank-sliced runtime planned: Trellis m=%d..%d block_m=%d, \"\n"
+        "            \"prefill %s capacity=%d chunk=%d topk=%d\",\n"
+        "            min_trellis_m,\n"
+        "            max_trellis_m,\n"
+        "            block_m,\n"
+        "            (\n"
+        "                f\"trellis block_m={prefill_block_m} \"\n"
+        "                f\"buckets={prefill_plan_capacities} \"\n"
+        "                f\"arena={prefill_arena_mib:.1f}MiB\"\n"
+        "                if prefill_states\n"
+        "                else \"parity\"\n"
+        "            ),\n"
+        "            max_batched_tokens,\n"
+        "            chunk,\n"
+        "            topk,\n"
+        "        )\n",
+        "report size-bucketed Trellis prefill runtimes",
+    )
+    replace_once(
+        exl3,
+        '        if runtime["prefill_plan"] is not None and m > runtime["max_trellis_m"]:\n'
+        '            if m > runtime["max_batched_tokens"]:\n'
+        "                raise ValueError(\n"
+        '                    "EXL3 batch exceeds its planned capacity: "\n'
+        '                    f"m={m}, capacity={runtime[\'max_batched_tokens\']}"\n'
+        "                )\n"
+        '            binding = runtime["api"].bind(\n'
+        '                runtime["prefill_plan"],\n'
+        '                scratch=runtime["prefill_scratch"],\n'
+        "                a=x,\n"
+        "                experts=layer.exl3_trellis_weights,\n"
+        "                topk_weights=topk_weights,\n"
+        "                topk_ids=topk_ids,\n"
+        "            )\n"
+        '            output = runtime["api"].run(binding=binding)\n'
+        "            return output.to(x.dtype)\n",
+        '        if runtime["prefill_states"] and m > runtime["max_trellis_m"]:\n'
+        '            if m > runtime["max_batched_tokens"]:\n'
+        "                raise ValueError(\n"
+        '                    "EXL3 batch exceeds its planned capacity: "\n'
+        '                    f"m={m}, capacity={runtime[\'max_batched_tokens\']}"\n'
+        "                )\n"
+        "            prefill_state = next(\n"
+        "                state for state in runtime[\"prefill_states\"] if m <= state[0]\n"
+        "            )\n"
+        "            _, prefill_plan, prefill_scratch = prefill_state\n"
+        '            binding = runtime["api"].bind(\n'
+        "                prefill_plan,\n"
+        "                scratch=prefill_scratch,\n"
+        "                a=x,\n"
+        "                experts=layer.exl3_trellis_weights,\n"
+        "                topk_weights=topk_weights,\n"
+        "                topk_ids=topk_ids,\n"
+        "            )\n"
+        '            output = runtime["api"].run(binding=binding)\n'
+        "            return output.to(x.dtype)\n",
+        "select the smallest fitting Trellis prefill runtime",
+    )
 
     compile(exl3.read_text(), str(exl3), "exec")
 

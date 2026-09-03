@@ -17,7 +17,7 @@ while (( $# )); do
     --nodes) nodes=$2; shift 2 ;;
     --model) model_kind=$2; shift 2 ;;
     -h|--help)
-      echo "usage: $0 [--nodes 1|2] [--model k2|k2-v0|k2-v1|k21|k21-v1|k21-v2|native]"
+      echo "usage: $0 [--nodes 1|2] [--model k2|k2-v0|k2-v1|vision-k2|k21|k21-v1|k21-v2|native]"
       exit 0
       ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -25,7 +25,7 @@ while (( $# )); do
 done
 case "${nodes}" in 1|2) ;; *) echo "--nodes must be 1 or 2" >&2; exit 2 ;; esac
 case "${model_kind}" in
-  k2|k2-v0|k2-v1|k21|k21-v1|k21-v2|native) ;;
+  k2|k2-v0|k2-v1|vision-k2|vision|k21|k21-v1|k21-v2|native) ;;
   *) echo "unsupported --model '${model_kind}'" >&2; exit 2 ;;
 esac
 if (( nodes == 1 )) && [[ "${model_kind}" == native ]]; then
@@ -87,6 +87,7 @@ common_args=(
   -e MODEL_REPO="${MODEL_REPO:-}"
   -e MODEL_REVISION="${MODEL_REVISION:-}"
   -e SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-}"
+  -e DSPARK_ENCODING_FILE="${DSPARK_ENCODING_FILE:-}"
   -e HF_HOME=/cache/huggingface
   -e HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
   -e HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
@@ -96,11 +97,12 @@ common_args=(
   -e MAX_NUM_SEQS="${MAX_NUM_SEQS:-6}"
   -e MAX_NUM_BATCHED_TOKENS="${MAX_NUM_BATCHED_TOKENS:-8192}"
   -e LONG_PREFILL_TOKEN_THRESHOLD="${LONG_PREFILL_TOKEN_THRESHOLD:-1024}"
-  -e MAX_CUDAGRAPH_CAPTURE_SIZE="${MAX_CUDAGRAPH_CAPTURE_SIZE:-36}"
+  -e MAX_CUDAGRAPH_CAPTURE_SIZE="${MAX_CUDAGRAPH_CAPTURE_SIZE:-}"
   -e GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.85}"
   -e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-nvfp4_ds_mla}"
   -e PREFIX_CACHE="${PREFIX_CACHE:-1}"
-  -e DSPARK_TOKENS="${DSPARK_TOKENS:-5}"
+  -e DSPARK_TOKENS="${DSPARK_TOKENS:-}"
+  -e LIMIT_MM_PER_PROMPT="${LIMIT_MM_PER_PROMPT:-image=8}"
   -e DRAFT_SAMPLE_METHOD="${DRAFT_SAMPLE_METHOD:-probabilistic}"
   -e DEFAULT_THINKING="${DEFAULT_THINKING:-max}"
   -e DSPARK_MAX_INFLIGHT_PREFILLS="${DSPARK_MAX_INFLIGHT_PREFILLS:-2}"
@@ -108,6 +110,7 @@ common_args=(
   -e VLLM_PREFIX_CACHE_RETENTION_INTERVAL="${VLLM_PREFIX_CACHE_RETENTION_INTERVAL:-4096}"
   -e DSPARK_ENABLE_ISSUE31_GPU_HOTFIX="${DSPARK_ENABLE_ISSUE31_GPU_HOTFIX:-0}"
   -e DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX="${DSPARK_ENABLE_ASSISTANT_FINAL_HOTFIX:-0}"
+  -e DSPARK_ENABLE_ISSUE136_XGRAMMAR_HOTFIX="${DSPARK_ENABLE_ISSUE136_XGRAMMAR_HOTFIX:-1}"
   -e DSPARK_SUPPRESS_STOPS_IN_REASONING="${DSPARK_SUPPRESS_STOPS_IN_REASONING:-1}"
   -e VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS="${VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS:-1800}"
   -e TILELANG_CACHE_DIR="${TILELANG_CACHE_DIR:-/cache/huggingface/tilelang-cache}"
