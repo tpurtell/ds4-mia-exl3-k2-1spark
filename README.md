@@ -349,8 +349,15 @@ docker build --progress=plain \
   -t ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:latest .
 ```
 
-The projection-mixed release is tagged `2026-09-03-projection-mixed`,
-`763f65b`, and `latest`:
+The K3-qualified release is tagged `2026-09-04-k3-qualified`, `sha-7262e57`,
+and `latest`:
+
+```text
+ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:35b08c95627446833c8563e0b3d0031d6264a0604f6c574d2a56315a4f6a84ad
+```
+
+The initial projection-mixed release remains tagged
+`2026-09-03-projection-mixed` and `763f65b`:
 
 ```text
 ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:41fa9e86768b48dd5fa6d6f29bfacbd3bec3b2bbc1711d80751ff37c2905dbf8
