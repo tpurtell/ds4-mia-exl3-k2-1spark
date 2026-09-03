@@ -339,8 +339,15 @@ docker build --progress=plain \
   -t ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:latest .
 ```
 
-The Vision K2 release is tagged `2026-09-03-vision-k2`, `7c7306f`, and
-`latest`:
+The projection-mixed release is tagged `2026-09-03-projection-mixed`,
+`763f65b`, and `latest`:
+
+```text
+ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:41fa9e86768b48dd5fa6d6f29bfacbd3bec3b2bbc1711d80751ff37c2905dbf8
+```
+
+The first Vision K2 release remains tagged `2026-09-03-vision-k2` and
+`7c7306f`:
 
 ```text
 ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:9bd058d1b91fc8d9164b0cf45ed8355fdbd5a05a3715ec38c0d5a67163dd1b60
