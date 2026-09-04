@@ -178,6 +178,10 @@ In the controlled fixed-output sweep, K3/K4/K5 measured 44.6/42.5/39.3 tok/s;
 the fourth proposal's cumulative prefix acceptance fell to about 12--13%.
 The [numerics analysis](NUMERICS_FOR_VISION_UPDATES.md) includes the phase-lock,
 single-row indexer, and equal-width cycle-cost controls behind that choice.
+The [recursive K3+K3 investigation](RECURSIVE_DSPARK.md) reproduces the weak
+tail on K2 and K2.2-D2, compares it with official-checkpoint reports, and shows
+that neither tentative-KV nor reconstructed-mHC recurrence recovers positions
+four through six. The rejected experiment is not installed in the release image.
 
 ## Performance
 

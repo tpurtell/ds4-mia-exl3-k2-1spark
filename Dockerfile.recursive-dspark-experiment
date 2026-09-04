@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1.7
+# Reproduction-only overlay for the rejected recursive-drafting experiment.
+# The production image intentionally does not install this patch.
+ARG BASE_IMAGE=ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:sha-7262e57
+FROM ${BASE_IMAGE}
+
+COPY patches/hotfix-dsv4-recursive-dspark.py /tmp/hotfix-dsv4-recursive-dspark.py
+RUN python3 /tmp/hotfix-dsv4-recursive-dspark.py
+
+LABEL org.opencontainers.image.description="Experimental two-pass K3+K3 DSpark overlay"
