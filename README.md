@@ -193,6 +193,10 @@ on one DGX Spark (`kiwi`), with `fp8_ds_mla`, K3, six active sequences,
 | ---: | ---: | ---: |
 | 9.39 GiB | 601,445 | 2.35× |
 
+KV allocation follows free unified memory at profiling time. A second clean
+boot of the published release image reported 10.61 GiB, 679,389 tokens, and
+2.65× at the same settings; the conservative 256K request ceiling is unchanged.
+
 The repository sweep used thinking off, temperature 0.6, a fresh run ID, and
 natural completions of at most 768 output tokens. Each `Prefill / TTFT` cell is
 concurrency one.
@@ -275,8 +279,15 @@ docker build --progress=plain \
   -t ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark:latest .
 ```
 
-The K3-qualified release is tagged `2026-09-04-k3-qualified`, `sha-7262e57`,
-and `latest`:
+The FP8-default release is tagged `2026-09-07-fp8-kv`, `sha-3c753b6`, and
+`latest`:
+
+```text
+ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:6a2f23e95f969cbd468e367b05ece375f6abee75dece57af20ce73632aa4821e
+```
+
+The prior K3-qualified release remains tagged `2026-09-04-k3-qualified` and
+`sha-7262e57`:
 
 ```text
 ghcr.io/tpurtell/ds4-mia-exl3-k2-1spark@sha256:35b08c95627446833c8563e0b3d0031d6264a0604f6c574d2a56315a4f6a84ad
