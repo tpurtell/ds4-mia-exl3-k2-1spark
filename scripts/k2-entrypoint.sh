@@ -323,9 +323,9 @@ exec /usr/local/bin/vllm serve "${model_ref}" \
   --trust-remote-code \
   --tensor-parallel-size "${tp_size}" \
   --pipeline-parallel-size 1 \
-  --kv-cache-dtype "${KV_CACHE_DTYPE:-nvfp4_ds_mla}" \
+  --kv-cache-dtype "${KV_CACHE_DTYPE:-fp8_ds_mla}" \
   --block-size 256 \
-  --max-model-len "${MAX_MODEL_LEN:-1000000}" \
+  --max-model-len "${MAX_MODEL_LEN:-256000}" \
   --max-num-seqs "${max_num_seqs}" \
   --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-8192}" \
   --long-prefill-token-threshold "${LONG_PREFILL_TOKEN_THRESHOLD:-1024}" \

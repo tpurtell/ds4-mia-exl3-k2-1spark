@@ -1,3 +1,10 @@
+## 2026-09-07
+
+### Changed
+
+- **FP8 KV is now the one-Spark default**: `KV_CACHE_DTYPE=fp8_ds_mla` replaces the historical `nvfp4_ds_mla` profile, and `MAX_MODEL_LEN=256000` replaces the one-million-token request ceiling in Compose, `launch.sh`, the image entrypoint, and `.env.example`. A live default Vision K2.2-D2 boot on `kiwi` allocated 9.39 GiB for 601,445 KV tokens, or 2.35 concurrent 256K requests.
+- **The README qualification is FP8-only**: the repository speed sweep, five-repeat DS4RT content suite, all-69 Tool Eval run, 145-request XGrammar canary, and native image smoke were reproduced against the default Vision K2.2-D2 K3 profile. Prior NVFP4 cross-model tables and raw links moved to [`NVFP4_HISTORICAL_RESULTS.md`](NVFP4_HISTORICAL_RESULTS.md).
+
 ## 2026-09-03
 
 ### Added

@@ -89,6 +89,31 @@ class VisionK2RecipeTest(unittest.TestCase):
         self.assertIn("default_dspark_tokens=3", entrypoint)
         self.assertNotIn("DSPARK_TOKENS=5", env_example)
 
+    def test_one_spark_defaults_to_fp8_kv_and_256k_context(self) -> None:
+        expected = {
+            "compose.yaml": (
+                "KV_CACHE_DTYPE: ${KV_CACHE_DTYPE:-fp8_ds_mla}",
+                "MAX_MODEL_LEN: ${MAX_MODEL_LEN:-256000}",
+            ),
+            ".env.example": (
+                "KV_CACHE_DTYPE=fp8_ds_mla",
+                "MAX_MODEL_LEN=256000",
+            ),
+            "launch.sh": (
+                '-e KV_CACHE_DTYPE="${KV_CACHE_DTYPE:-fp8_ds_mla}"',
+                '-e MAX_MODEL_LEN="${MAX_MODEL_LEN:-256000}"',
+            ),
+            "scripts/k2-entrypoint.sh": (
+                '--kv-cache-dtype "${KV_CACHE_DTYPE:-fp8_ds_mla}"',
+                '--max-model-len "${MAX_MODEL_LEN:-256000}"',
+            ),
+        }
+        for relative, needles in expected.items():
+            with self.subTest(relative=relative):
+                text = (ROOT / relative).read_text()
+                for needle in needles:
+                    self.assertIn(needle, text)
+
     def test_qualified_xgrammar_fix_is_enabled_by_default(self) -> None:
         compose = (ROOT / "compose.yaml").read_text()
         launcher = (ROOT / "launch.sh").read_text()

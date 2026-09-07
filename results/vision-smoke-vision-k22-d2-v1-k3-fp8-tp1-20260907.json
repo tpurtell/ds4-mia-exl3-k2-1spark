@@ -1,0 +1,139 @@
+{
+  "base_url": "http://kiwi:8888/v1",
+  "failures": [],
+  "finished_at": "2026-09-07T01:36:36.837571+00:00",
+  "model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "ok": true,
+  "phases": {
+    "ladder": {
+      "cases": [
+        {
+          "build_s": 0.03149757400387898,
+          "elapsed_s": 0.6016082269779872,
+          "ok": true,
+          "output_tok_s": 42.18124166597908,
+          "output_tokens": 7,
+          "prefill_tok_s": 640.411063284135,
+          "preview": "LADDER_OK 256",
+          "prompt_tokens": 279,
+          "target_prompt_tokens": 256,
+          "ttft_s": 0.43565768300322816
+        }
+      ],
+      "ok": true
+    },
+    "readiness": {
+      "main_max_model_len": 256000,
+      "main_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+      "ok": true,
+      "text_smoke": {
+        "elapsed_s": 0.33793832099763677,
+        "ok": true,
+        "output_tok_s": 25.495475244562247,
+        "output_tokens": 2,
+        "prefill_tok_s": 34.68301262057247,
+        "preview": "OK",
+        "prompt_tokens": 9,
+        "ttft_s": 0.2594930290069897
+      },
+      "vision_smoke": {
+        "elapsed_s": 0.7432534719991963,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "Red",
+        "prompt_tokens": 132
+      },
+      "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1"
+    },
+    "soak": {
+      "ok": true,
+      "rounds": [
+        {
+          "median_output_tok_s": 48.592149961520114,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.5840553060115781,
+              "ok": true,
+              "output_tok_s": 48.592149961520114,
+              "output_tokens": 8,
+              "prefill_tok_s": 662.8206221899886,
+              "preview": "SOAK_OK 1-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.41941966000013053
+            }
+          ],
+          "round": 1
+        },
+        {
+          "median_output_tok_s": 48.36378513433656,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.5872896450164262,
+              "ok": true,
+              "output_tok_s": 48.36378513433656,
+              "output_tokens": 8,
+              "prefill_tok_s": 658.9604325447261,
+              "preview": "SOAK_OK 2-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.4218766200065147
+            }
+          ],
+          "round": 2
+        },
+        {
+          "median_output_tok_s": 48.10245003897091,
+          "ok": true,
+          "results": [
+            {
+              "elapsed_s": 0.5874947249831166,
+              "ok": true,
+              "output_tok_s": 48.10245003897091,
+              "output_tokens": 8,
+              "prefill_tok_s": 660.0455863954561,
+              "preview": "SOAK_OK 3-0",
+              "prompt_tokens": 278,
+              "ttft_s": 0.42118302997550927
+            }
+          ],
+          "round": 3
+        }
+      ]
+    },
+    "vision_mid": {
+      "hold": {
+        "elapsed_s": 0.5770009520056192,
+        "ok": true,
+        "output_tok_s": 30.1416279121697,
+        "output_tokens": 5,
+        "prefill_tok_s": 666.4762749953048,
+        "preview": "PREFIX_HELD",
+        "prompt_tokens": 274,
+        "ttft_s": 0.4111174099962227
+      },
+      "ok": true,
+      "resume": {
+        "elapsed_s": 0.6086854290042538,
+        "ok": true,
+        "output_tok_s": 36.53256738690297,
+        "output_tokens": 6,
+        "prefill_tok_s": 616.4945006872305,
+        "preview": "AFTER_VISION_OK",
+        "prompt_tokens": 274,
+        "ttft_s": 0.4444484090199694
+      },
+      "vision": {
+        "elapsed_s": 0.47715893501299433,
+        "ok": true,
+        "output_tokens": 2,
+        "preview": "Red",
+        "prompt_tokens": 133
+      }
+    }
+  },
+  "started_at": "2026-09-07T01:36:31.485159+00:00",
+  "updated_at": "2026-09-07T01:36:36.837589+00:00",
+  "vl_model": "deepseek-v4-flash-vision-exp-exl3-k2.2-d2-v1",
+  "vl_url": "http://kiwi:8888/v1"
+}

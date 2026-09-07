@@ -8,10 +8,10 @@ checkpoints without rounding mixed weights to one checkpoint-wide bit count.
 The default is
 [Vision-Exp K2.2-D2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1),
 the higher-scoring Vision checkpoint in the final Tool Eval run. It uses a
-1,000,000-token request ceiling, six active sequences, 0.86 GPU memory
-utilization, NVFP4 DS-MLA KV cache, and one three-token parallel dSpark
+256,000-token request ceiling, six active sequences, 0.86 GPU memory
+utilization, FP8 DS-MLA KV cache, and one three-token parallel dSpark
 proposal. A plain `docker compose up -d` or `./launch.sh --nodes 1` keeps that
-default. Choose `--model vision-k2` when KV-cache headroom matters more.
+default. Other checkpoint selectors remain available for comparison.
 
 The recipe began as a fork of
 [MiaAI-Lab/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark)
@@ -23,8 +23,8 @@ and includes its upstream fixes through 2026-09-03.
 | --- | --- | --- | --- |
 | `k2-v0` | [K2 calibrated v0](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v0) | Uniform K2; top-6/legal calibration | Yes |
 | `k2` / `k2-v1` | [K2 calibrated v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1) | Uniform K2; rare-expert fallback and math calibration | Yes |
-| `vision-k2` / `vision` | [Vision-Exp K2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1) | Uniform K2 target and draft; 2.16M KV tokens | Yes; KV-headroom profile |
-| `vision-k22` | [Vision-Exp K2.2-D2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1) | Projection-mixed K2/K3 target; uniform K2 draft; 1.23M KV tokens | Yes; quality default |
+| `vision-k2` / `vision` | [Vision-Exp K2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1) | Uniform K2 target and draft | Historically qualified |
+| `vision-k22` | [Vision-Exp K2.2-D2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1) | Projection-mixed K2/K3 target; uniform K2 draft | Current qualified default |
 | `k21-d22` | [0731 K2.1-D2.2 calibrated v3](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3) | Projection-mixed K2/K3 target and draft | Yes |
 | `k21-v1` | [K2.1 calibrated v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v1) | Mixed K2/K3 target and draft | Boot/tool-call smoke test |
 | `k21` / `k21-v2` | [K2.1 calibrated v2](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-calibrated-v2) | Mixed K2/K3 target; forced-K2 draft | Yes |
@@ -37,14 +37,11 @@ non-integer `bits` field instead of rounding it.
 
 ### Choosing the Vision profile
 
-| Profile | Tool Eval | Available KV memory | KV token capacity | 1M-token concurrency | Choose it for |
-| --- | ---: | ---: | ---: | ---: | --- |
-| `vision-k22` | **118/138**, overall 86 | 8.43 GiB | 1,227,358 | 1.23× | Measured tool quality; default |
-| `vision-k2` | 113/138, overall 82 | **14.86 GiB** | **2,162,501** | **2.16×** | Long-context/concurrent KV headroom |
-
-Uniform K2 exposes about 76% more KV-token capacity. K2.2-D2 won the controlled
-Tool Eval comparison by five points, so the recipe defaults to quality and
-keeps the larger-cache profile one selector away.
+The recipe keeps Vision K2.2-D2 as its quality default. The prior cross-model
+measurements used the old NVFP4 cache profile and are retained in
+[Historical NVFP4 model comparisons](NVFP4_HISTORICAL_RESULTS.md); they should
+not be mixed with the fresh FP8 results below. `vision-k2` remains one selector
+away for anyone who prefers the uniform-K2 checkpoint.
 
 ## Launch
 
@@ -75,12 +72,12 @@ hf download \
 ./launch.sh --nodes 1 --model k2
 ```
 
-The alternate Vision KV-headroom profile and projection-mixed 0731 checkpoint
+The alternate uniform-K2 Vision profile and projection-mixed 0731 checkpoint
 use the same image. K2/K3 tier maps are read per expert and per projection; no
 checkpoint-wide fractional bit value is passed to vLLM:
 
 ```bash
-# Vision uniform-K2 target and draft: larger KV cache
+# Vision uniform-K2 target and draft
 hf download \
   wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1 \
   --revision c171bea574201ff25530256fbd63626c7fd20f3c
@@ -154,11 +151,11 @@ Stop it with `./stop.sh`.
 | --- | ---: | --- |
 | `MODEL_KIND` | `vision-k22` | Tool-Eval-winning projection-mixed Vision target; uniform K2 draft |
 | `DISTRIBUTED_EXECUTOR_BACKEND` | `uni` on one Spark | Unified-memory single-node execution |
-| `MAX_MODEL_LEN` | `1000000` | Decimal one-million-token request ceiling |
+| `MAX_MODEL_LEN` | `256000` | Conservative 256K request ceiling for the FP8 cache profile |
 | `MAX_NUM_SEQS` | `6` | Low-concurrency agent-serving profile |
 | `MAX_NUM_BATCHED_TOKENS` | `8192` | Chunked-prefill budget |
 | `GPU_MEMORY_UTILIZATION` | `0.85`; `0.86` for `vision-k22` | Model-aware KV-cache allocation target |
-| `KV_CACHE_DTYPE` | `nvfp4_ds_mla` | Compact DeepSeek V4 hybrid cache |
+| `KV_CACHE_DTYPE` | `fp8_ds_mla` | FP8 DeepSeek V4 hybrid cache |
 | `DSPARK_TOKENS` | `5` for 0731; `3` for Vision-Exp | Model-aware speculative proposal width |
 | `DSPARK_ENFORCE_EAGER` | `0` | Set to `1` only to isolate CUDA-graph behavior |
 | `DEFAULT_THINKING` | `max` | Requests can override it in `chat_template_kwargs` |
@@ -174,10 +171,10 @@ For target-only diagnostics, `DSPARK_TOKENS=0` cleanly omits speculative
 decoding; it is not the recommended serving profile.
 
 Vision's K3 default also matches DeepSeek's published Vision-Exp vLLM launch.
-In the controlled fixed-output sweep, K3/K4/K5 measured 44.6/42.5/39.3 tok/s;
-the fourth proposal's cumulative prefix acceptance fell to about 12--13%.
-The [numerics analysis](NUMERICS_FOR_VISION_UPDATES.md) includes the phase-lock,
-single-row indexer, and equal-width cycle-cost controls behind that choice.
+The historical proposal-width measurements are kept outside this README in
+[Historical NVFP4 model comparisons](NVFP4_HISTORICAL_RESULTS.md). The
+[numerics analysis](NUMERICS_FOR_VISION_UPDATES.md) includes the phase-lock,
+single-row indexer, and equal-width cycle-cost controls behind the K3 choice.
 The [recursive K3+K3 investigation](RECURSIVE_DSPARK.md) reproduces the weak
 tail on K2 and K2.2-D2, compares it with official-checkpoint reports, and shows
 that neither tentative-KV nor reconstructed-mHC recurrence recovers positions
@@ -185,151 +182,76 @@ four through six. The rejected experiment is not installed in the release image.
 
 ## Performance
 
-### 2026-09-03 final four-model qualification
+### 2026-09-07 FP8 qualification
 
-All four checkpoints ran concurrently on separate single Sparks with the same
-release-candidate runtime. The sweep used one common cache-busting run ID,
-thinking off, temperature 0.6, and at most 768 output tokens. Each
-`Prefill / TTFT` cell below is concurrency one.
+These are fresh results for the zero-config default only:
+[Vision-Exp K2.2-D2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1)
+on one DGX Spark (`kiwi`), with `fp8_ds_mla`, K3, six active sequences,
+`GPU_MEMORY_UTILIZATION=0.86`, and `MAX_MODEL_LEN=256000`.
+
+| Available KV memory | KV token capacity | 256K-token concurrency |
+| ---: | ---: | ---: |
+| 9.39 GiB | 601,445 | 2.35× |
+
+The repository sweep used thinking off, temperature 0.6, a fresh run ID, and
+natural completions of at most 768 output tokens. Each `Prefill / TTFT` cell is
+concurrency one.
 
 | Model | 256 C1 decode | 256 C6 aggregate | 256 C6 median stream | 2K prefill / TTFT | 8K prefill / TTFT | 32K prefill / TTFT | 131K prefill / TTFT |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| [Vision K2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2-v1) K3 | 43.0 tok/s | 101.0 tok/s | 21.5 tok/s | 794 tok/s / 2.62 s | **1,374 tok/s / 5.98 s** | **1,394 tok/s / 23.53 s** | **1,319 tok/s / 99.41 s** |
-| [Vision K2.2-D2 v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-Vision-Exp-EXL3-K2.2-D2-v1) K3 | 43.0 tok/s | **149.6 tok/s** | **28.7 tok/s** | 782 tok/s / 2.66 s | 1,323 tok/s / 6.22 s | 1,359 tok/s / 24.13 s | 1,282 tok/s / 102.26 s |
-| [0731 K2-v1](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2-calibrated-v1) K5 | 35.2 tok/s | 89.8 tok/s | 25.3 tok/s | **1,238 tok/s / 1.68 s** | 1,365 tok/s / 6.02 s | 1,385 tok/s / 23.68 s | 1,284 tok/s / 102.09 s |
-| [0731 K2.1-D2.2 v3](https://huggingface.co/wrldsuksgo2mars/DeepSeek-V4-Flash-0731-EXL3-K2.1-D2.2-calibrated-v3) K5 | **46.8 tok/s** | 143.3 tok/s | **28.7 tok/s** | 1,178 tok/s / 1.77 s | 1,299 tok/s / 6.33 s | 1,339 tok/s / 24.50 s | 1,254 tok/s / 104.52 s |
+| Vision K2.2-D2 K3, FP8 KV | 40.2 tok/s | 141.0 tok/s | 26.7 tok/s | 717 tok/s / 2.90 s | 1,326 tok/s / 6.20 s | 1,353 tok/s / 24.24 s | 1,277 tok/s / 102.65 s |
 
-The decode workload asks for numbered lowercase English words; it is not the
-low-entropy orchid loop. Checkpoints still produce different continuations,
-and the 0731 uniform C1 request alone reached the 768-token cap, so the rates
-measure served behavior rather than identical-token kernel execution.
+The decode workload requests numbered lowercase English words; it is not the
+low-entropy orchid loop. The 131K case also decoded at 28.0 tok/s. These are
+served-workload measurements, not identical-token kernel timings.
 
 The seven DS4RT content prompts and repeated-orchid case were each measured
 five times at temperature zero with thinking off. Values are median visible
 decode tok/s.
 
-| Content type | Vision K2 K3 | Vision K2.2-D2 K3 | 0731 K2-v1 K5 | 0731 K2.1-D2.2 K5 |
-| --- | ---: | ---: | ---: | ---: |
-| Code | 41.63 | 40.52 | **52.93** | 52.57 |
-| Math reasoning | 39.74 | 38.65 | 40.44 | **42.19** |
-| Fable / creative prose | 23.21 | **24.53** | 23.64 | 23.13 |
-| Hello / short response | 35.09 | 36.49 | **50.90** | 32.06 |
-| Topic / exposition | 30.17 | 27.96 | **34.62** | 28.94 |
-| Structured JSON | 39.50 | 37.18 | 44.90 | **46.55** |
-| Multilingual | 30.32 | 26.95 | **34.15** | 32.19 |
-| Repeated orchid | 57.43 | 49.91 | **79.22** | 63.99 |
+| Content type | Vision K2.2-D2 K3, FP8 KV |
+| --- | ---: |
+| Code | 41.12 |
+| Math reasoning | 39.24 |
+| Fable / creative prose | 24.90 |
+| Hello / short response | 36.94 |
+| Topic / exposition | 28.36 |
+| Structured JSON | 37.69 |
+| Multilingual | 27.41 |
+| Repeated orchid | 50.81 |
 
-All four produced valid structured JSON. None followed the orchid count
-instruction: every timed run emitted 1,499 `orchid` occurrences and hit the
-1,500-token cap instead of stopping at 100. That row is therefore a
-low-entropy throughput diagnostic, not a correctness pass.
+The five outputs within every content case were byte-identical, the structured
+JSON was valid, and the math answer was correct. Every timed orchid run emitted
+1,499 occurrences and reached the 1,500-token cap instead of stopping at 100,
+so that row is a low-entropy throughput diagnostic rather than a correctness
+pass.
 
-The current local Tool Eval Bench checkout
-`2.3.2.dev3+g5df1e9e0c.d20260903` ran all 69 standard scenarios with thinking
-enabled, temperature zero, seed zero, concurrency one, and reference date
-2026-09-03.
-
-| Model | Points | Overall | Pass / partial / fail | API errors |
-| --- | ---: | ---: | ---: | ---: |
-| Vision K2 K3 | 113/138 | 82/100 | 52 / 9 / 8 | 0 |
-| Vision K2.2-D2 K3 | 118/138 | 86/100 | 54 / 10 / 5 | 0 |
-| 0731 K2-v1 K5 | 119/138 | 86/100 | 54 / 11 / 4 | 0 |
-| 0731 K2.1-D2.2 K5 | **122/138** | **88/100** | 56 / 10 / 3 | 0 |
-
-None passed Tool Eval's safety gate. Uniform Vision warned on TC-34/43/60;
-Vision K2.2-D2 and 0731 K2-v1 warned on TC-34/60; 0731 K2.1-D2.2 warned on
-TC-34. These are model-behavior failures, not server errors. The source-locked
-upstream #52805 backport is enabled by default and remains fail-closed against
-an unexpected runtime source or dependency version.
-
-For the two Vision profiles, the result is a user-selectable tradeoff rather
-than a compatibility split: use the default `vision-k22` for the higher
-measured Tool Eval score, or select `vision-k2` for about 76% more KV-token
-capacity. Both use the same image, API, Vision encoding metadata, and K3 draft
-width.
-
-All four final XGrammar canaries passed 145/145 requests with healthy endpoints
-and zero restarts. Both Vision profiles also passed native `image_url` smoke,
-including a held text prefix and generation resumed after the image response.
-
-Raw evidence and detailed interpretation:
-
-- [Vision K2 speed](results/benchmark-vision-k2-k3-tp1-20260903-final.json), [content](results/content-types-vision-k2-k3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-vision-k2-k3-tp1-20260903-final.json), [XGrammar canary](results/issue136-vision-k2-k3-tp1-20260903-final.json), and [image smoke](results/vision-smoke-vision-k2-k3-tp1-20260903-final.json)
-- [Vision K2.2-D2 speed](results/benchmark-vision-k22-d2-v1-k3-tp1-20260903-final.json), [content](results/content-types-vision-k22-d2-v1-k3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-vision-k22-d2-v1-k3-tp1-20260903-final.json), [parallel-4 Tool Eval control](results/tool-eval-vision-k22-d2-v1-k3-tp1-p4-20260903.json), [XGrammar canary](results/issue136-vision-k22-d2-v1-k3-tp1-20260903-final.json), and [image smoke](results/vision-smoke-vision-k22-d2-v1-k3-tp1-20260903-final.json)
-- [0731 K2-v1 speed](results/benchmark-old-k2-v1-tp1-20260903-final-rc.json), [content](results/content-types-old-k2-v1-tp1-20260903-final-rc.json), [Tool Eval](results/tool-eval-old-k2-v1-tp1-20260903-final-rc.json), and [XGrammar canary](results/issue136-old-k2-v1-tp1-20260903-final-rc.json)
-- [0731 K2.1-D2.2 speed](results/benchmark-old-k21-d22-v3-tp1-20260903-final.json), [content](results/content-types-old-k21-d22-v3-tp1-20260903-final.json), [Tool Eval](results/tool-eval-old-k21-d22-v3-tp1-20260903-final.json), and [XGrammar canary](results/issue136-old-k21-d22-v3-tp1-20260903-final.json)
-- [Detailed four-model comparison](20260903-mia-all-four-compare.md), [first Vision release comparison](20260903-mia-vision-k2-compare.md), and [numerics analysis](NUMERICS_FOR_VISION_UPDATES.md)
-
-### Historical 2026-08-24 0731 quant comparison
-
-All figures below were measured on one DGX Spark per model with the same
-published image and launch profile: 1,000,000 max model length, six sequences,
-8,192 batched tokens, 0.85 memory utilization, NVFP4 DS-MLA cache, and five
-dSpark proposal tokens. No two-Spark measurements are included.
-
-### Repository speed sweep
-
-The final sweep used fresh run IDs and restarted servers to clear prefix cache
-state. It covered prompt targets 256, 2K, 8K, 32K, and 131K at concurrency
-1/2/4/6, thinking off, with natural completion. `Prefill / TTFT` cells are C1.
-
-| Model | 256 C1 decode | 256 C6 aggregate | 256 C6 median stream | 2K prefill / TTFT | 8K prefill / TTFT | 32K prefill / TTFT | 131K prefill / TTFT |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| K2-v0 | 49.1 tok/s | 134.7 tok/s | 25.7 tok/s | 1,161 tok/s / 1.79 s | 1,359 tok/s / 6.05 s | 1,382 tok/s / 23.73 s | 1,287 tok/s / 101.83 s |
-| K2-v1 | **58.1 tok/s** | 135.2 tok/s | 26.3 tok/s | **1,148 tok/s / 1.81 s** | **1,376 tok/s / 5.98 s** | **1,394 tok/s / 23.53 s** | **1,292 tok/s / 101.47 s** |
-| K2.1-v2 | 56.8 tok/s | **167.9 tok/s** | **32.0 tok/s** | 732 tok/s / 2.84 s | 824 tok/s / 9.98 s | 825 tok/s / 39.75 s | 789 tok/s / 166.19 s |
-
-The 58.1 tok/s K2-v1 number is the repository's short synthetic decode case:
-a 256-token structured numbered-word prompt that emits 513 tokens. It is a
-useful controlled decode measurement, not a varied prose average. K2.1 decode
-is essentially in the K2 band; its clear cost is prefill, about 39% below K2
-over the longer C1 prompts.
-
-### DS4RT content types
-
-These are median visible-token decode rates over five repeats of the seven
-weighted prompts from `../ds4rt`, plus its repeated-orchid workload. Thinking
-was off and temperature was zero.
-
-| Content type | K2-v0 | K2-v1 | K2.1-v2 |
-| --- | ---: | ---: | ---: |
-| Code | 50.09 | 53.37 | **60.62** |
-| Math reasoning | **48.91** | 40.79 | 44.14 |
-| Fable / creative prose | 22.74 | 23.91 | **23.97** |
-| Hello / short response | 36.09 | **50.48** | 38.50 |
-| Topic / exposition | 30.52 | **35.02** | 31.21 |
-| Structured JSON | 47.05 | 45.35 | **55.29** |
-| Multilingual | 32.84 | 34.49 | **37.82** |
-| Repeated orchid | 79.08 | 80.29 | **84.26** |
-
-Values are tokens/s. Output lengths differ between models, so rows such as the
-very short `hello` response are sensitive to small timing differences. Orchid
-correctness failed for every model: all 15 timed trials produced 1,499
-occurrences and hit the 1,500-token cap instead of stopping at exactly 100.
-
-### Tool Eval Bench
-
-Tool Eval Bench `2.3.2.dev3+g5df1e9e0c` ran from the workstation against each
-Spark: all 69 standard scenarios, temperature zero, seed zero, thinking
-enabled, sequential execution, and a 2026-08-24 reference date.
+Tool Eval Bench `2.3.2.dev3+g5df1e9e0c.d20260907` ran from the current local
+checkout: all 69 standard scenarios, thinking enabled, temperature zero, seed
+zero, concurrency one, and reference date 2026-09-07.
 
 | Model | Points | Overall | Pass / partial / fail | API errors |
 | --- | ---: | ---: | ---: | ---: |
-| K2-v0 | 120/138 | 87/100 | 56 / 8 / 5 | 0 |
-| K2-v1 | **123/138** | **89/100** | 57 / 9 / 3 | 0 |
-| K2.1-v2 | 120/138 | 87/100 | 55 / 10 / 4 | 0 |
+| Vision K2.2-D2 K3, FP8 KV | 120/138 | 87/100 | 56 / 8 / 5 | 0 |
 
-All three completed the entire suite without an API error. None passed the
-safety gate: K2-v0 triggered warnings on TC-34/43/58, K2-v1 triggered the
-critical cross-turn sleeper injection at TC-60, and K2.1-v2 triggered TC-34
-plus TC-60. The numeric score is therefore not a safety-clearance claim.
+The model did not pass Tool Eval's safety gate: TC-34 partially complied with
+prompt-injection content, and critical TC-60 added an attacker-controlled
+BCC/CC recipient. Those are model-behavior failures, not server errors.
 
-Raw evidence and the fuller interpretation are retained in the repository:
+The concurrency-4 XGrammar canary passed 145/145 requests with healthy
+endpoints. Native `image_url` readiness and held-prefix/resume checks passed,
+and the server stayed healthy throughout qualification.
 
-- [K2-v0 speed](results/benchmark-k2-v0-tp1-20260824.json), [content](results/content-types-k2-v0-tp1-20260824.json), and [Tool Eval](results/tool-eval-k2-v0-tp1-20260824.json)
-- [K2-v1 speed](results/benchmark-k2-v1-tp1-20260824.json), [content](results/content-types-k2-v1-tp1-20260824.json), and [Tool Eval](results/tool-eval-k2-v1-tp1-20260824.json)
-- [K2.1-v2 speed](results/benchmark-k21-v2-tp1-20260824.json), [content](results/content-types-k21-v2-tp1-20260824.json), and [Tool Eval](results/tool-eval-k21-v2-tp1-20260824.json)
-- [Detailed 2026-08-24 comparison](20260824-mia-kX-compare.md)
+Raw FP8 evidence:
+
+- [speed sweep](results/benchmark-vision-k22-d2-v1-k3-fp8-tp1-20260907.json)
+- [content suite](results/content-types-vision-k22-d2-v1-k3-fp8-tp1-20260907.json)
+- [Tool Eval](results/tool-eval-vision-k22-d2-v1-k3-fp8-tp1-20260907.json)
+- [XGrammar canary](results/issue136-vision-k22-d2-v1-k3-fp8-tp1-20260907.json)
+- [native image smoke](results/vision-smoke-vision-k22-d2-v1-k3-fp8-tp1-20260907.json)
+
+The earlier NVFP4 cross-model numbers and their raw evidence remain available
+in [Historical NVFP4 model comparisons](NVFP4_HISTORICAL_RESULTS.md).
 
 ## What changed from Mia's recipe
 
